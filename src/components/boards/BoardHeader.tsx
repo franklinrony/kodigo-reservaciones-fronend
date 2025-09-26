@@ -1,7 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Board } from '@/models';
 import { Button } from '@/components/ui/Button';
-import { Settings, Users, Eye, Table } from 'lucide-react';
+import { Settings, Users, Eye, Table, ArrowLeft } from 'lucide-react';
 
 interface BoardHeaderProps {
   board: Board;
@@ -14,14 +15,34 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   viewMode,
   onViewModeChange
 }) => {
+  const navigate = useNavigate();
+
+  const handleBackToBoards = () => {
+    navigate('/boards');
+  };
   return (
     <div className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{board.name}</h1>
-          {board.description && (
-            <p className="text-gray-600 mt-1">{board.description}</p>
-          )}
+        <div className="flex items-center space-x-4">
+          {/* Botón Volver */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBackToBoards}
+            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          >
+            <ArrowLeft size={16} className="mr-1" />
+            Volver a tableros
+          </Button>
+          
+          <div className="border-l border-gray-300 h-6"></div>
+          
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{board.name}</h1>
+            {board.description && (
+              <p className="text-gray-600 mt-1">{board.description}</p>
+            )}
+          </div>
         </div>
         
         <div className="flex items-center space-x-3">
