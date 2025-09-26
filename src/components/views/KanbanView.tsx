@@ -43,6 +43,36 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     onBoardUpdate();
   };
 
+  const handleUpdateList = async (listId: number, listData: { name: string }) => {
+    try {
+      await listService.updateList(board.id, listId, listData);
+      onBoardUpdate();
+    } catch (error) {
+      console.error('Error updating list:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteList = async (listId: number) => {
+    try {
+      await listService.deleteList(board.id, listId);
+      onBoardUpdate();
+    } catch (error) {
+      console.error('Error deleting list:', error);
+      throw error;
+    }
+  };
+
+  const handleUpdateCard = async (cardId: number, cardData: { title?: string; description?: string }) => {
+    try {
+      await cardService.updateCard(cardId, cardData);
+      onBoardUpdate();
+    } catch (error) {
+      console.error('Error updating card:', error);
+      throw error;
+    }
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
 
@@ -87,6 +117,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   index={index}
                   onCardClick={onCardClick}
                   onCreateCard={handleCreateCard}
+                  onUpdateList={handleUpdateList}
+                  onDeleteList={handleDeleteList}
+                  onUpdateCard={handleUpdateCard}
                 />
               ))}
               {provided.placeholder}

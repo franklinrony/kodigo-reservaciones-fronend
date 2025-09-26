@@ -3,14 +3,40 @@ import { Card as CardType } from '@/models';
 import { Calendar, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Draggable } from '@hello-pangea/dnd';
+import { InlineEdit } from '@/components/ui/InlineEdit';
 
 interface KanbanCardProps {
   card: CardType;
   index: number;
   onClick: () => void;
+  onUpdateCard?: (cardId: number, cardData: { title?: string; description?: string }) => Promise<void>;
 }
 
-export const KanbanCard: React.FC<KanbanCardProps> = ({ card, index, onClick }) => {
+export const KanbanCard: React.FC<KanbanCardProps> = ({ 
+  card, 
+  index, 
+  onClick, 
+  onUpdateCard 
+}) => {
+  const handleUpdateTitle = async (newTitle: string) => {
+    if (onUpdateCard) {
+      await onUpdateCard(card.id, { title: newTitle });
+    }
+  };
+
+  const handleUpdateDescription = async (newDescription: string) => {
+    if (onUpdateCard) {
+      await onUpdateCard(card.id, { description: newDescription });
+    }
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Solo abrir modal si no se está editando inline
+    const target = e.target as HTMLElement;
+    if (!target.closest('.inline-edit')) {
+      onClick();
+    }
+  };
   return (
     <Draggable draggableId={card.id.toString()} index={index}>
       {(provided, snapshot) => (
@@ -18,16 +44,31 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ card, index, onClick }) 
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          onClick={onClick}
+          onClick={handleCardClick}
           className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3 cursor-pointer hover:shadow-md transition-shadow ${
             snapshot.isDragging ? 'shadow-lg rotate-3' : ''
           }`}
         >
-          <h4 className="font-medium text-gray-900 mb-2">{card.title}</h4>
+          <div className="inline-edit">
+            <InlineEdit
+              value={card.title}
+              onSave={handleUpdateTitle}
+              disabled={!onUpdateCard}
+              className="font-medium text-gray-900 mb-2 block"
+              placeholder="Sin título"
+            />
+          </div>
           
-          {card.description && (
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{card.description}</p>
-          )}
+          <div className="inline-edit">
+            <InlineEdit
+              value={card.description || ''}
+              onSave={handleUpdateDescription}
+              disabled={!onUpdateCard}
+              multiline
+              className="text-sm text-gray-600 mb-3 line-clamp-2 block"
+              placeholder="Agregar descripción..."
+            />
+          </div>
           
           {/* Labels */}
           {card.labels && card.labels.length > 0 && (
