@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DragDropContext, DropResult, Droppable } from 'react-beautiful-dnd';
+import { DragDropContext, DropResult, Droppable } from '@hello-pangea/dnd';
 import { Board, Card, CreateCardRequest } from '@/models';
 import { KanbanList } from '@/components/lists/KanbanList';
 import { Button } from '@/components/ui/Button';
