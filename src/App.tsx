@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { SyncProvider } from './contexts/SyncContext';
+import { SyncIndicator } from './components/ui/SyncIndicator';
 import { Layout } from './components/layout/Layout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
@@ -12,13 +14,15 @@ import { BoardPage } from './pages/BoardPage';
 
 function App() {
   return (
-    <NotificationProvider>
-      <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<LoginForm />} />
-            <Route path="/register" element={<RegisterForm />} />
+    <SyncProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <Router>
+            <SyncIndicator />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<LoginForm />} />
+              <Route path="/register" element={<RegisterForm />} />
             
             {/* Protected routes with layout */}
             <Route
@@ -56,6 +60,7 @@ function App() {
       </Router>
     </AuthProvider>
     </NotificationProvider>
+    </SyncProvider>
   );
 }
 

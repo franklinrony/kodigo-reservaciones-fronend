@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react';
 import { listService } from '@/services/listService';
 import { cardService } from '@/services/cardService';
 import { useNotification } from '@/hooks/useNotification';
+import { useSyncContext } from '@/contexts/SyncContext';
 
 interface KanbanViewProps {
   board: Board;
@@ -23,6 +24,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const [newListName, setNewListName] = useState('');
   const [loading, setLoading] = useState(false);
   const { showNotification } = useNotification();
+  const { startSync, endSync } = useSyncContext();
 
   // Estado local para optimistic updates
   const [optimisticBoard, setOptimisticBoard] = useState<Board>(board);
@@ -184,6 +186,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
       try {
         // 2. Hacer la petición al backend en segundo plano
+        startSync(`move-card-${cardId}`);
         await cardService.updateCard(cardId, {
           list_id: destListId,
           position: destination.index
@@ -195,7 +198,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
         // Actualizar datos reales en background sin recargar visualmente
         setTimeout(() => {
           onBoardUpdate();
-        }, 500); // Pequeño delay para que no sea disruptivo
+          endSync(`move-card-${cardId}`);
+        }, 300); // Reducido el delay para mejor UX
         
       } catch (error) {
         console.error('Error moving card:', error);
@@ -204,6 +208,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
         // 4. Si falla, revertir el cambio optimista y mostrar error
         revertOptimisticChanges();
         showNotification('error', error instanceof Error ? error.message : 'Error al mover la tarjeta');
+        endSync(`move-card-${cardId}`);
       }
     }
   };
