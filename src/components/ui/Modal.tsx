@@ -21,19 +21,22 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4 sm:p-6 md:p-8">
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-          onClick={onClose}
-        />
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
+      
+      {/* Flexbox container for perfect centering */}
+      <div className="fixed inset-0 flex items-center justify-center p-4">
         <div
           className={clsx(
-            'relative bg-white rounded-lg shadow-xl w-full mx-auto',
+            'bg-white rounded-lg shadow-xl w-full relative z-10',
             {
               'max-w-sm': size === 'sm',
               'max-w-md': size === 'md', 
               'max-w-2xl': size === 'lg',
-              'max-w-4xl': size === 'xl',
+              'max-w-5xl': size === 'xl', // Cambio a max-w-5xl para hacerlo aún más ancho
             }
           )}
         >
