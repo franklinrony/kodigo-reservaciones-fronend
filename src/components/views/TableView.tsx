@@ -25,9 +25,38 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
   const { showNotification } = useNotification();
   const { startSync, endSync } = useSyncContext();
 
-  const allCards: ExtendedCard[] = board.lists?.flatMap(list => 
-    list.cards?.map(card => ({ ...card, listName: list.name, listId: list.id })) || []
-  ) || [];
+  // Estado optimista para la tabla
+  const [optimisticCards, setOptimisticCards] = useState<ExtendedCard[]>([]);
+
+  // Actualizar estado optimista cuando cambia el board
+  React.useEffect(() => {
+    const currentCards: ExtendedCard[] = board.lists?.flatMap(list => 
+      list.cards?.map(card => ({ ...card, listName: list.name, listId: list.id })) || []
+    ) || [];
+    setOptimisticCards(currentCards);
+  }, [board]);
+
+  // Helper function para revertir cambios optimistas
+  const revertOptimisticChanges = () => {
+    const currentCards: ExtendedCard[] = board.lists?.flatMap(list => 
+      list.cards?.map(card => ({ ...card, listName: list.name, listId: list.id })) || []
+    ) || [];
+    setOptimisticCards(currentCards);
+  };
+
+  // Helper function para reordenar optimísticamente
+  const reorderCardsOptimistically = (sourceIndex: number, destIndex: number): ExtendedCard[] => {
+    const newCards = [...optimisticCards];
+    const [movedCard] = newCards.splice(sourceIndex, 1);
+    newCards.splice(destIndex, 0, movedCard);
+    
+    // Actualizar posiciones
+    newCards.forEach((card, index) => {
+      card.position = index;
+    });
+    
+    return newCards;
+  };
 
   // Función para iniciar edición inline
   const startEditing = (card: Card, field: 'title' | 'description') => {
@@ -93,23 +122,33 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
     }
   };
 
-  // Función para manejar drag & drop
+  // Función para manejar drag & drop con actualizaciones optimistas
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
 
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
     const cardId = parseInt(result.draggableId);
-    const newIndex = result.destination.index;
     
-    // En vista tabla, solo reordenamos, no cambiamos de lista
+    // Si no cambió de posición, no hacer nada
+    if (sourceIndex === destIndex) return;
+
+    // 1. Aplicar cambio optimista inmediatamente
+    const newCards = reorderCardsOptimistically(sourceIndex, destIndex);
+    setOptimisticCards(newCards);
+
     try {
+      // 2. Hacer la petición al backend en segundo plano
       startSync(`reorder-card-${cardId}`);
       
       await cardService.updateCard(cardId, {
-        position: newIndex
+        position: destIndex
       });
       
+      // 3. Si es exitoso, mostrar notificación sutil
       showNotification('success', 'Orden actualizado');
       
+      // Actualizar datos reales en background
       setTimeout(() => {
         onBoardUpdate();
         endSync(`reorder-card-${cardId}`);
@@ -117,7 +156,11 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
       
     } catch (error) {
       console.error('Error reordering card:', error);
-      showNotification('error', 'Error al reordenar');
+      console.warn('Card reorder operation failed. Reverting optimistic changes.');
+      
+      // 4. Si falla, revertir el cambio optimista y mostrar error
+      revertOptimisticChanges();
+      showNotification('error', 'Error al reordenar la tarjeta');
       endSync(`reorder-card-${cardId}`);
     }
   };
@@ -157,7 +200,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                   {...provided.droppableProps}
                   ref={provided.innerRef}
                 >
-                  {allCards.map((card: ExtendedCard, index) => (
+                  {optimisticCards.map((card: ExtendedCard, index) => (
                     <Draggable key={card.id} draggableId={card.id.toString()} index={index}>
                       {(provided, snapshot) => (
                         <tr
@@ -327,7 +370,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
             </Droppable>
           </table>
           
-          {allCards.length === 0 && (
+          {optimisticCards.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">No hay tarjetas en este tablero</p>
             </div>
