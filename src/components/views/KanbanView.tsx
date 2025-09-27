@@ -160,6 +160,18 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     }
   };
 
+  const handleDeleteCard = async (cardId: number) => {
+    try {
+      await cardService.deleteCard(cardId);
+      onBoardUpdate();
+      showNotification('success', 'Tarjeta eliminada correctamente');
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      showNotification('error', error instanceof Error ? error.message : 'Error al eliminar la tarjeta');
+      throw error;
+    }
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
 
@@ -235,6 +247,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   onUpdateList={handleUpdateList}
                   onDeleteList={handleDeleteList}
                   onUpdateCard={handleUpdateCard}
+                  onDeleteCard={handleDeleteCard}
                 />
               ))}
               {provided.placeholder}

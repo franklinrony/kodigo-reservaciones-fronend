@@ -14,6 +14,7 @@ interface KanbanListProps {
   onUpdateList?: (listId: number, listData: { name: string }) => Promise<void>;
   onDeleteList?: (listId: number) => Promise<void>;
   onUpdateCard?: (cardId: number, cardData: { title?: string; description?: string }) => Promise<void>;
+  onDeleteCard?: (cardId: number) => Promise<void>;
 }
 
 export const KanbanList: React.FC<KanbanListProps> = ({
@@ -23,7 +24,8 @@ export const KanbanList: React.FC<KanbanListProps> = ({
   onCreateCard,
   onUpdateList,
   onDeleteList,
-  onUpdateCard
+  onUpdateCard,
+  onDeleteCard
 }) => {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
@@ -210,6 +212,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                     index={cardIndex}
                     onClick={() => onCardClick(card)}
                     onUpdateCard={onUpdateCard}
+                    onDeleteCard={onDeleteCard}
                   />
                 ))}
                 {provided.placeholder}

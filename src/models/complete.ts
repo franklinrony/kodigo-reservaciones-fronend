@@ -15,6 +15,7 @@ export interface Label {
   board_id: number;
   created_at: string;
   updated_at: string;
+  priority?: 'alta' | 'media' | 'baja'; // Prioridad basada en el label
 }
 
 // Tipo para comentarios con usuario completo
@@ -39,6 +40,10 @@ export interface Card {
   due_date?: string;
   is_completed: boolean;
   is_archived: boolean;
+  priority?: 'alta' | 'media' | 'baja'; // Prioridad derivada del label principal
+  assigned_to?: string; // Usuario asignado (nombre)
+  responsible?: string; // Responsable
+  estimated_days?: number; // Días estimados
   created_at: string;
   updated_at: string;
   user?: User;

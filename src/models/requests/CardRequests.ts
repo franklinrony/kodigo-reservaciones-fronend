@@ -4,6 +4,9 @@ export interface CreateCardRequest {
   position?: number;
   due_date?: string;
   label_ids?: number[];
+  assigned_to?: string;
+  responsible?: string;
+  estimated_days?: number;
 }
 
 export interface UpdateCardRequest {
@@ -12,4 +15,8 @@ export interface UpdateCardRequest {
   list_id?: number;
   position?: number;
   due_date?: string;
+  assigned_to?: string;
+  responsible?: string;
+  estimated_days?: number;
+  is_completed?: boolean;
 }

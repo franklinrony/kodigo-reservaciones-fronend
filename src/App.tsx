@@ -11,6 +11,7 @@ import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
 import { BoardsPage } from './pages/BoardsPage';
 import { BoardPage } from './pages/BoardPage';
+import { PreviewPage } from './pages/PreviewPage';
 
 function App() {
   return (
@@ -52,6 +53,12 @@ function App() {
                 <BoardPage />
               </ProtectedRoute>
             }
+          />
+          
+          {/* Temporary preview route */}
+          <Route
+            path="/preview"
+            element={<PreviewPage />}
           />
           
           {/* Redirect unknown routes to home */}

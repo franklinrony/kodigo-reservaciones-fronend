@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Board, Card, UpdateCardRequest } from '../../models';
 import { Calendar, MessageCircle, User, Edit2, Check, X, GripVertical } from 'lucide-react';
-import { format } from 'date-fns';
 import { cardService } from '../../services/cardService';
 import { useNotification } from '../../hooks/useNotification';
 import { useSyncContext } from '../../contexts/SyncContext';
+import { truncateText, getPriorityFromLabels, formatDueDate } from '@/utils/textUtils';
 
 interface TableViewProps {
   board: Board;
@@ -177,16 +177,19 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                   Tarjeta
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lista
+                  Prioridad
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fecha de vencimiento
+                  Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Comentarios
+                  Fecha límite
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Asignado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Comentarios
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
@@ -246,6 +249,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                 <div 
                                   className="text-sm font-medium text-gray-900 flex items-center group cursor-pointer"
                                   onClick={() => startEditing(card, 'title')}
+                                  onDoubleClick={() => onCardClick(card)}
                                 >
                                   <span>{card.title}</span>
                                   <Edit2 size={14} className="ml-2 opacity-0 group-hover:opacity-100 text-kodigo-primary" />
@@ -279,12 +283,22 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                 </div>
                               ) : (
                                 <div 
-                                  className="text-sm text-gray-500 truncate max-w-xs group cursor-pointer"
+                                  className="text-sm text-gray-500 max-w-xs group cursor-pointer"
                                   onClick={() => startEditing(card, 'description')}
                                 >
                                   {card.description ? (
                                     <div className="flex items-center">
-                                      <span>{card.description}</span>
+                                      <span>
+                                        {(() => {
+                                          const { truncated, hasMore } = truncateText(card.description, 75);
+                                          return (
+                                            <>
+                                              {truncated}
+                                              {hasMore && <span className="text-kodigo-primary ml-1 font-medium">... más</span>}
+                                            </>
+                                          );
+                                        })()}
+                                      </span>
                                       <Edit2 size={12} className="ml-2 opacity-0 group-hover:opacity-100 text-kodigo-primary" />
                                     </div>
                                   ) : (
@@ -296,6 +310,26 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                 </div>
                               )}
                             </div>
+                          </td>
+
+                          {/* Prioridad */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {(() => {
+                              const { priority, color, text } = getPriorityFromLabels(card.labels);
+                              return priority ? (
+                                <span 
+                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+                                  style={{
+                                    backgroundColor: `${color}20`,
+                                    color: color
+                                  }}
+                                >
+                                  {text}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              );
+                            })()}
                           </td>
 
                           {/* Lista (Dropdown) */}
@@ -313,24 +347,12 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                             </select>
                           </td>
 
-                          {/* Fecha de vencimiento */}
+                          {/* Fecha límite */}
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {card.due_date ? (
                               <div className="flex items-center space-x-1">
                                 <Calendar size={14} className="text-kodigo-primary" />
-                                <span>{format(new Date(card.due_date), 'dd/MM/yyyy')}</span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </td>
-
-                          {/* Comentarios */}
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {card.comments && card.comments.length > 0 ? (
-                              <div className="flex items-center space-x-1">
-                                <MessageCircle size={14} className="text-kodigo-primary" />
-                                <span>{card.comments.length}</span>
+                                <span>{formatDueDate(card.due_date)}</span>
                               </div>
                             ) : (
                               <span className="text-gray-400">-</span>
@@ -339,12 +361,32 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
 
                           {/* Asignado */}
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {card.user ? (
-                              <div className="flex items-center space-x-2">
-                                <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center">
-                                  <User size={12} className="text-white" />
+                            <div className="space-y-1">
+                              {card.assigned_to && (
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center">
+                                    <User size={12} className="text-white" />
+                                  </div>
+                                  <span className="text-sm text-gray-900">{card.assigned_to}</span>
                                 </div>
-                                <span className="text-sm text-gray-900">{card.user.name}</span>
+                              )}
+                              {card.responsible && (
+                                <div className="text-xs text-gray-500">
+                                  <strong>Resp:</strong> {card.responsible}
+                                </div>
+                              )}
+                              {!card.assigned_to && !card.responsible && (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Comentarios */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {card.comments && card.comments.length > 0 ? (
+                              <div className="flex items-center space-x-1">
+                                <MessageCircle size={14} className="text-kodigo-primary" />
+                                <span>{card.comments.length}</span>
                               </div>
                             ) : (
                               <span className="text-gray-400">-</span>

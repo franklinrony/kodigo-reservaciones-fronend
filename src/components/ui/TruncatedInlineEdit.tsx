@@ -1,42 +1,39 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { truncateText } from '@/utils/textUtils';
 
-interface InlineEditProps {
+interface TruncatedInlineEditProps {
   value: string;
   onSave: (newValue: string) => Promise<void>;
-  multiline?: boolean;
+  maxLength?: number;
   placeholder?: string;
   className?: string;
-  editClassName?: string;
   disabled?: boolean;
 }
 
-export const InlineEdit: React.FC<InlineEditProps> = ({
+export const TruncatedInlineEdit: React.FC<TruncatedInlineEditProps> = ({
   value,
   onSave,
-  multiline = false,
-  placeholder = "Haz clic para editar...",
+  maxLength = 75,
+  placeholder = "Haz clic para agregar...",
   className = "",
-  editClassName = "",
   disabled = false
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedValue, setEditedValue] = useState(value);
   const [isSaving, setIsSaving] = useState(false);
   
-  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setEditedValue(value);
   }, [value]);
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      if (!multiline) {
-        (inputRef.current as HTMLInputElement).select();
-      }
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
     }
-  }, [isEditing, multiline]);
+  }, [isEditing]);
 
   const handleSave = async () => {
     if (editedValue.trim() === value.trim()) {
@@ -54,11 +51,6 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditedValue(value);
   };
 
   const handleBlur = (e: React.FocusEvent) => {
@@ -95,8 +87,13 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
     }
   };
 
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedValue(value);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (!multiline || e.ctrlKey || e.metaKey)) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSave();
     }
@@ -105,27 +102,37 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
     }
   };
 
+  const { truncated, hasMore } = truncateText(value, maxLength);
+
   if (disabled) {
-    return <div className={className}>{value}</div>;
+    return (
+      <div className={className}>
+        {value ? (
+          <>
+            {truncated}
+            {hasMore && <span className="text-kodigo-primary ml-1 font-medium">... más</span>}
+          </>
+        ) : (
+          <span className="text-gray-400 italic">{placeholder}</span>
+        )}
+      </div>
+    );
   }
 
   if (isEditing) {
-    const InputComponent = multiline ? 'textarea' : 'input';
-    
     return (
-      <InputComponent
-        ref={inputRef as React.RefObject<HTMLInputElement & HTMLTextAreaElement>}
-        type={!multiline ? "text" : undefined}
+      <textarea
+        ref={textareaRef}
         value={editedValue}
         onChange={(e) => setEditedValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         disabled={isSaving}
         placeholder={placeholder}
-        className={`bg-white border-2 border-blue-500 rounded px-2 py-1 outline-none resize-none ${editClassName} ${
+        className={`w-full bg-white border-2 border-blue-500 rounded px-2 py-1 outline-none resize-none ${
           isSaving ? 'opacity-50' : ''
-        }`}
-        rows={multiline ? 3 : undefined}
+        } ${className}`}
+        rows={3}
       />
     );
   }
@@ -138,7 +145,14 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
       }`}
       title="Haz clic para editar"
     >
-      {value || placeholder}
+      {value ? (
+        <>
+          {truncated}
+          {hasMore && <span className="text-kodigo-primary ml-1 font-medium">... más</span>}
+        </>
+      ) : (
+        placeholder
+      )}
     </div>
   );
 };

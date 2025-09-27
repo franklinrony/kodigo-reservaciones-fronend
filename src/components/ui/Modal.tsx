@@ -19,39 +19,44 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const handleOverlayClick = () => {
+    // Siempre llamar a onClose, que puede ser handleCloseAttempt del CardModal
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Overlay */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
+        onClick={handleOverlayClick}
       />
       
-      {/* Flexbox container for perfect centering */}
-      <div className="fixed inset-0 flex items-center justify-center p-4">
+      {/* Container responsive con scroll */}
+      <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div
           className={clsx(
-            'bg-white rounded-lg shadow-xl w-full relative z-10',
+            'relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 w-full',
             {
-              'max-w-sm': size === 'sm',
-              'max-w-md': size === 'md', 
-              'max-w-2xl': size === 'lg',
-              'max-w-5xl': size === 'xl', // Cambio a max-w-5xl para hacerlo aún más ancho
+              'sm:max-w-sm': size === 'sm',
+              'sm:max-w-lg': size === 'md', 
+              'sm:max-w-4xl': size === 'lg',
+              'sm:max-w-6xl max-h-[90vh] overflow-y-auto': size === 'xl',
             }
           )}
         >
           {title && (
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b">
+            <div className="flex items-center justify-between px-4 py-4 sm:px-6 border-b bg-white sticky top-0 z-10">
               <h3 className="text-lg sm:text-xl font-medium text-gray-900">{title}</h3>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded flex-shrink-0"
               >
                 <X size={20} />
               </button>
             </div>
           )}
-          <div className="p-4 sm:p-6">
+          <div className="px-4 py-4 sm:px-6 sm:py-6">
             {children}
           </div>
         </div>

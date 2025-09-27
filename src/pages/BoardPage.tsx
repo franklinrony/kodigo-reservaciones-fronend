@@ -80,6 +80,9 @@ export const BoardPage: React.FC = () => {
           setSelectedCard(null);
         }}
         onUpdateCard={handleUpdateCard}
+        boardLists={board.lists?.map(list => ({ id: list.id, name: list.name })) || []}
+        boardCollaborators={board.collaborators || []}
+        boardOwnerId={board.user_id}
       />
     </div>
   );
