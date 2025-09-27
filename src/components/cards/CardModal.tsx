@@ -86,23 +86,24 @@ export const CardModal: React.FC<CardModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} size="xl">
       <div className="space-y-6">
         {/* Card Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-lg font-semibold border-0 px-0 focus:ring-0"
+              className="text-lg font-semibold border-0 px-0 focus:ring-0 w-full"
+              placeholder="Título de la tarjeta"
             />
           </div>
-          <Button onClick={handleSave} loading={loading} size="sm">
+          <Button onClick={handleSave} loading={loading} size="sm" className="shrink-0">
             <Save size={16} className="mr-1" />
             Guardar
           </Button>
         </div>
 
         {/* Card Details */}
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -111,7 +112,7 @@ export const CardModal: React.FC<CardModalProps> = ({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary sm:text-sm"
                 rows={4}
                 placeholder="Añade una descripción más detallada..."
               />
@@ -120,23 +121,30 @@ export const CardModal: React.FC<CardModalProps> = ({
             {/* Comments */}
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                <MessageCircle size={16} className="mr-2" />
+                <MessageCircle size={16} className="mr-2 text-kodigo-primary" />
                 Comentarios
               </h4>
               
               <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
                 {commentsLoading ? (
-                  <p className="text-sm text-gray-500">Cargando comentarios...</p>
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-kodigo-primary mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-500">Cargando comentarios...</p>
+                  </div>
                 ) : comments.length === 0 ? (
-                  <p className="text-sm text-gray-500">No hay comentarios aún.</p>
+                  <div className="text-center py-8 text-gray-400">
+                    <MessageCircle size={32} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No hay comentarios aún.</p>
+                    <p className="text-xs">Sé el primero en comentar</p>
+                  </div>
                 ) : (
                   comments.map(comment => (
-                    <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
+                    <div key={comment.id} className="bg-gray-50 rounded-lg p-3 border-l-3 border-kodigo-primary/20">
                       <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                        <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center shrink-0">
                           <User size={12} className="text-white" />
                         </div>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium text-gray-700">
                           {comment.user?.name || 'Usuario'}
                         </span>
                         <span className="text-xs text-gray-500">
@@ -149,50 +157,51 @@ export const CardModal: React.FC<CardModalProps> = ({
                 )}
               </div>
               
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Escribe un comentario..."
-                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary sm:text-sm"
                   onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                 />
-                <Button onClick={handleAddComment} size="sm">
+                <Button onClick={handleAddComment} size="sm" className="shrink-0">
                   Comentar
                 </Button>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="lg:col-span-1 space-y-6">
             {/* Due Date */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Calendar size={16} className="mr-2" />
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
+                <Calendar size={16} className="mr-2 text-kodigo-primary" />
                 Fecha de vencimiento
               </label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary sm:text-sm"
               />
             </div>
 
             {/* Labels */}
             {card.labels && card.labels.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Etiquetas
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {card.labels.map(label => (
                     <span
                       key={label.id}
-                      className="px-2 py-1 text-xs font-medium rounded"
+                      className="px-3 py-1 text-xs font-medium rounded-full border"
                       style={{
-                        backgroundColor: label.color + '20',
+                        backgroundColor: label.color + '15',
+                        borderColor: label.color + '40',
                         color: label.color
                       }}
                     >
@@ -204,15 +213,22 @@ export const CardModal: React.FC<CardModalProps> = ({
             )}
 
             {/* Created by */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
                 Creado por
               </label>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center shrink-0">
                   <User size={14} className="text-white" />
                 </div>
-                <span className="text-sm">{card.user?.name || 'Usuario'}</span>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {card.user?.name || 'Usuario'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {card.created_at && format(new Date(card.created_at), 'dd/MM/yyyy')}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

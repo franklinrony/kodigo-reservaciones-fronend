@@ -42,7 +42,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Tablero">
+    <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Tablero" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Nombre del Tablero"
