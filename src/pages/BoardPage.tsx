@@ -67,6 +67,7 @@ export const BoardPage: React.FC = () => {
           <TableView
             board={board}
             onCardClick={handleCardClick}
+            onBoardUpdate={refetch}
           />
         )}
       </div>
