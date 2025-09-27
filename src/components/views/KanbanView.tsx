@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, DropResult, Droppable } from '@hello-pangea/dnd';
 import { Board, Card, CreateCardRequest } from '@/models';
 import { KanbanList } from '@/components/lists/KanbanList';
@@ -24,6 +24,64 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const [loading, setLoading] = useState(false);
   const { showNotification } = useNotification();
 
+  // Estado local para optimistic updates
+  const [optimisticBoard, setOptimisticBoard] = useState<Board>(board);
+
+  // Actualizar estado local cuando cambie el board prop
+  useEffect(() => {
+    setOptimisticBoard(board);
+  }, [board]);
+
+  // Helper function para mover una card optimistamente
+  const moveCardOptimistically = (
+    cardId: number, 
+    sourceListId: number, 
+    destListId: number, 
+    _sourceIndex: number, // Marcado como no usado con _
+    destIndex: number
+  ): Board => {
+    const newBoard = { ...optimisticBoard };
+    newBoard.lists = newBoard.lists?.map(list => ({ ...list, cards: [...(list.cards || [])] })) || [];
+
+    const sourceList = newBoard.lists.find(list => list.id === sourceListId);
+    const destList = newBoard.lists.find(list => list.id === destListId);
+
+    if (!sourceList || !destList) return optimisticBoard;
+
+    // Encontrar y remover la tarjeta de la lista origen
+    const cardToMove = sourceList.cards?.find(card => card.id === cardId);
+    if (!cardToMove) return optimisticBoard;
+
+    sourceList.cards = sourceList.cards?.filter(card => card.id !== cardId) || [];
+
+    // Actualizar los datos de la tarjeta
+    const updatedCard = {
+      ...cardToMove,
+      list_id: destListId,
+      position: destIndex
+    };
+
+    // Insertar la tarjeta en la lista destino
+    destList.cards = destList.cards || [];
+    destList.cards.splice(destIndex, 0, updatedCard);
+
+    // Actualizar posiciones de las tarjetas afectadas
+    sourceList.cards?.forEach((card, index) => {
+      card.position = index;
+    });
+
+    destList.cards.forEach((card, index) => {
+      card.position = index;
+    });
+
+    return newBoard;
+  };
+
+  // Helper function para revertir cambios optimistas
+  const revertOptimisticChanges = () => {
+    setOptimisticBoard(board);
+  };
+
   const handleCreateList = async () => {
     if (!newListName.trim()) return;
     
@@ -32,8 +90,12 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
       await listService.createList(board.id, { name: newListName });
       setNewListName('');
       setIsAddingList(false);
-      onBoardUpdate();
       showNotification('success', 'Lista creada correctamente');
+      
+      // Actualizar datos reales en background
+      setTimeout(() => {
+        onBoardUpdate();
+      }, 300);
     } catch (error) {
       console.error('Error creating list:', error);
       showNotification('error', error instanceof Error ? error.message : 'Error al crear la lista');
@@ -43,8 +105,18 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   const handleCreateCard = async (listId: number, cardData: CreateCardRequest) => {
-    await cardService.createCard(listId, cardData);
-    onBoardUpdate();
+    try {
+      await cardService.createCard(listId, cardData);
+      showNotification('success', 'Tarjeta creada correctamente');
+      
+      // Actualizar datos reales en background  
+      setTimeout(() => {
+        onBoardUpdate();
+      }, 300);
+    } catch (error) {
+      console.error('Error creating card:', error);
+      showNotification('error', error instanceof Error ? error.message : 'Error al crear la tarjeta');
+    }
   };
 
   const handleUpdateList = async (listId: number, listData: { name: string }) => {
@@ -97,27 +169,46 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
     if (type === 'CARD') {
       const cardId = parseInt(draggableId);
+      const sourceListId = parseInt(source.droppableId);
       const destListId = parseInt(destination.droppableId);
 
+      // 1. Aplicar cambio optimista inmediatamente
+      const newBoard = moveCardOptimistically(
+        cardId, 
+        sourceListId, 
+        destListId, 
+        source.index, 
+        destination.index
+      );
+      setOptimisticBoard(newBoard);
+
       try {
+        // 2. Hacer la petición al backend en segundo plano
         await cardService.updateCard(cardId, {
           list_id: destListId,
           position: destination.index
         });
-        onBoardUpdate();
+        
+        // 3. Si es exitoso, mostrar notificación sutil y actualizar datos reales
         showNotification('success', 'Tarjeta movida correctamente');
+        
+        // Actualizar datos reales en background sin recargar visualmente
+        setTimeout(() => {
+          onBoardUpdate();
+        }, 500); // Pequeño delay para que no sea disruptivo
+        
       } catch (error) {
         console.error('Error moving card:', error);
         console.warn('Card drag operation failed. This is typically due to backend data inconsistency.');
-        // Mostrar notificación de error al usuario
+        
+        // 4. Si falla, revertir el cambio optimista y mostrar error
+        revertOptimisticChanges();
         showNotification('error', error instanceof Error ? error.message : 'Error al mover la tarjeta');
-        // Recargar el tablero para restaurar el estado anterior
-        onBoardUpdate();
       }
     }
   };
 
-  const lists = board.lists || [];
+  const lists = optimisticBoard.lists || [];
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>

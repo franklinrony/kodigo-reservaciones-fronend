@@ -29,6 +29,16 @@
     background: linear-gradient(135deg, #6B46C1 0%, #EC4899 50%, #F97316 100%);
     @apply hover:opacity-90 text-white font-medium py-2 px-4 rounded-lg transition-opacity duration-200;
   }
+
+  /* Botón fantasma mejorado para gradientes */
+  .btn-ghost-on-gradient {
+    @apply bg-white/90 backdrop-blur-sm text-kodigo-primary hover:bg-white hover:text-kodigo-dark border-2 border-white/50 hover:border-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 shadow-lg;
+  }
+
+  /* Link sobre gradiente con mejor contraste */
+  .link-on-gradient {
+    @apply text-white hover:text-white bg-white/10 hover:bg-white/20 px-3 py-2 rounded-md font-medium transition-all duration-200 border border-white/20 hover:border-white/40 shadow-sm;
+  }
   
   .card-kodigo {
     @apply bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;

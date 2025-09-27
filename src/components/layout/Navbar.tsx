@@ -23,7 +23,10 @@ export const Navbar: React.FC = () => {
 
           {isAuthenticated && (
             <div className="flex items-center space-x-4">
-              <Link to="/boards" className="text-white hover:text-kodigo-light font-medium transition-colors duration-200">
+              <Link 
+                to="/boards" 
+                className="link-on-gradient"
+              >
                 Mis Tableros
               </Link>
               
@@ -74,10 +77,17 @@ export const Navbar: React.FC = () => {
           {!isAuthenticated && (
             <div className="flex items-center space-x-4">
               <Link to="/login">
-                <Button variant="ghost">Iniciar Sesión</Button>
+                <Button 
+                  variant="ghost" 
+                  className="btn-ghost-on-gradient"
+                >
+                  Iniciar Sesión
+                </Button>
               </Link>
               <Link to="/register">
-                <Button>Registrarse</Button>
+                <Button className="bg-white text-kodigo-primary hover:bg-gray-100 hover:text-kodigo-dark px-4 py-2 font-semibold shadow-lg">
+                  Registrarse
+                </Button>
               </Link>
             </div>
           )}
