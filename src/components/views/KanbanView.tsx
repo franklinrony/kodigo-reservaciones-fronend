@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Plus } from 'lucide-react';
 import { listService } from '@/services/listService';
 import { cardService } from '@/services/cardService';
+import { useNotification } from '@/hooks/useNotification';
 
 interface KanbanViewProps {
   board: Board;
@@ -21,6 +22,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [loading, setLoading] = useState(false);
+  const { showNotification } = useNotification();
 
   const handleCreateList = async () => {
     if (!newListName.trim()) return;
@@ -31,8 +33,10 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
       setNewListName('');
       setIsAddingList(false);
       onBoardUpdate();
+      showNotification('success', 'Lista creada correctamente');
     } catch (error) {
       console.error('Error creating list:', error);
+      showNotification('error', error instanceof Error ? error.message : 'Error al crear la lista');
     } finally {
       setLoading(false);
     }
@@ -47,8 +51,10 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     try {
       await listService.updateList(board.id, listId, listData);
       onBoardUpdate();
+      showNotification('success', 'Lista actualizada correctamente');
     } catch (error) {
       console.error('Error updating list:', error);
+      showNotification('error', error instanceof Error ? error.message : 'Error al actualizar la lista');
       throw error;
     }
   };
@@ -57,8 +63,10 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     try {
       await listService.deleteList(board.id, listId);
       onBoardUpdate();
+      showNotification('success', 'Lista eliminada correctamente');
     } catch (error) {
       console.error('Error deleting list:', error);
+      showNotification('error', error instanceof Error ? error.message : 'Error al eliminar la lista');
       throw error;
     }
   };
@@ -67,8 +75,13 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     try {
       await cardService.updateCard(cardId, cardData);
       onBoardUpdate();
+      showNotification('success', 'Tarjeta actualizada correctamente');
     } catch (error) {
       console.error('Error updating card:', error);
+      // Mostrar notificación de error al usuario
+      showNotification('error', error instanceof Error ? error.message : 'Error al actualizar la tarjeta');
+      // Recargar el tablero para obtener el estado más reciente
+      onBoardUpdate();
       throw error;
     }
   };
@@ -92,8 +105,14 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
           position: destination.index
         });
         onBoardUpdate();
+        showNotification('success', 'Tarjeta movida correctamente');
       } catch (error) {
         console.error('Error moving card:', error);
+        console.warn('Card drag operation failed. This is typically due to backend data inconsistency.');
+        // Mostrar notificación de error al usuario
+        showNotification('error', error instanceof Error ? error.message : 'Error al mover la tarjeta');
+        // Recargar el tablero para restaurar el estado anterior
+        onBoardUpdate();
       }
     }
   };
@@ -102,7 +121,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="p-6 h-full overflow-x-auto">
+      <div className="p-6 h-full overflow-x-auto bg-gray-50">
         <Droppable droppableId="board" direction="horizontal" type="LIST">
           {(provided) => (
             <div
@@ -127,13 +146,13 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               {/* Add List Button */}
               <div className="w-80 flex-shrink-0">
                 {isAddingList ? (
-                  <div className="bg-gray-100 rounded-lg p-4">
+                  <div className="bg-white rounded-lg p-4 shadow-md border">
                     <input
                       type="text"
                       value={newListName}
                       onChange={(e) => setNewListName(e.target.value)}
                       placeholder="Ingresa el nombre de la lista..."
-                      className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-kodigo-primary focus:border-kodigo-primary"
                       autoFocus
                     />
                     <div className="flex items-center space-x-2">
@@ -141,6 +160,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         size="sm"
                         onClick={handleCreateList}
                         loading={loading}
+                        variant="gradient"
                       >
                         Agregar lista
                       </Button>
@@ -149,7 +169,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                           setIsAddingList(false);
                           setNewListName('');
                         }}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-gray-500 hover:text-kodigo-primary transition-colors duration-200"
                       >
                         ✕
                       </button>
@@ -158,7 +178,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                 ) : (
                   <button
                     onClick={() => setIsAddingList(true)}
-                    className="w-full bg-gray-100 hover:bg-gray-200 rounded-lg p-4 flex items-center justify-center space-x-2 text-gray-600 transition-colors"
+                    className="w-full bg-white hover:bg-kodigo-light/30 border-2 border-dashed border-kodigo-primary/30 hover:border-kodigo-primary rounded-lg p-4 flex items-center justify-center space-x-2 text-kodigo-primary hover:text-kodigo-dark transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     <Plus size={20} />
                     <span>Agregar otra lista</span>

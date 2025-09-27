@@ -38,15 +38,23 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-kodigo-gradient py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white rounded-2xl shadow-2xl p-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Iniciar Sesión
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-12 h-12 bg-kodigo-gradient rounded-xl flex items-center justify-center shadow-lg">
+              <Mail className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <h2 className="text-center text-3xl font-extrabold text-kodigo-gradient">
+            Bienvenido a Kodigo
           </h2>
+          <h3 className="mt-2 text-center text-xl font-bold text-gray-900">
+            Iniciar Sesión
+          </h3>
           <p className="mt-2 text-center text-sm text-gray-600">
             ¿No tienes cuenta?{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link to="/register" className="font-medium text-kodigo-primary hover:text-kodigo-dark transition-colors duration-200">
               Regístrate aquí
             </Link>
           </p>
@@ -95,6 +103,7 @@ export const LoginForm: React.FC = () => {
               type="submit"
               loading={loading}
               className="w-full"
+              variant="gradient"
             >
               Iniciar Sesión
             </Button>

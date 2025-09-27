@@ -13,25 +13,27 @@ export class ApiError extends Error {
 }
 
 // Helper para extraer datos de respuestas Laravel con diferentes wrappers
-export function extractLaravelData<T>(response: any, dataKey?: string): T {
+export function extractLaravelData<T>(response: unknown, dataKey?: string): T {
+  const res = response as Record<string, unknown>;
+  
   // Si se especifica una clave específica (ej: 'boards', 'cards', 'lists')
-  if (dataKey && response[dataKey]) {
-    return response[dataKey];
+  if (dataKey && res[dataKey]) {
+    return res[dataKey] as T;
   }
   
   // Formato estándar { data: ... }
-  if (response.data !== undefined) {
-    return response.data;
+  if (res.data !== undefined) {
+    return res.data as T;
   }
   
   // Si es un array directo
-  if (Array.isArray(response)) {
-    return response as T;
+  if (Array.isArray(res)) {
+    return res as T;
   }
   
   // Si es un objeto directo (para objetos individuales)
-  if (typeof response === 'object' && response.id !== undefined) {
-    return response as T;
+  if (typeof res === 'object' && res !== null && 'id' in res) {
+    return res as T;
   }
   
   throw new Error('Formato de respuesta no reconocido');
@@ -41,11 +43,71 @@ class ApiClient {
   private baseURL: string;
   private authBaseURL: string;
   private apiV1BaseURL: string;
+  private isRefreshing: boolean = false;
+  private failedQueue: Array<{ resolve: (token: string) => void; reject: (error: Error) => void }> = [];
 
   constructor(baseURL: string, authBaseURL: string, apiV1BaseURL: string) {
     this.baseURL = baseURL;
     this.authBaseURL = authBaseURL;
     this.apiV1BaseURL = apiV1BaseURL;
+  }
+
+  private shouldExcludeAuth(endpoint: string): boolean {
+    // Rutas que NO necesitan token de autenticación
+    const authExcludePaths = [
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/forgot-password',
+      '/api/auth/reset-password'
+    ];
+    
+    return authExcludePaths.some(path => endpoint.includes(path));
+  }
+
+  private async refreshAuthToken(): Promise<string> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${this.getAuthToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Token refresh failed');
+      }
+
+      const data = await response.json();
+      const newToken = data.token;
+      
+      if (newToken) {
+        localStorage.setItem('auth_token', newToken);
+        console.log('✅ Token refreshed successfully');
+        return newToken;
+      }
+      
+      throw new Error('No token in refresh response');
+    } catch (error) {
+      console.error('❌ Token refresh failed:', error);
+      // Limpiar token inválido y redirigir al login
+      localStorage.removeItem('auth_token');
+      window.location.href = '/auth/login';
+      throw error;
+    }
+  }
+
+  private async processQueue(error: Error | null, token: string | null = null): Promise<void> {
+    this.failedQueue.forEach(({ resolve, reject }) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(token!);
+      }
+    });
+    
+    this.failedQueue = [];
   }
 
   private getAuthToken(): string | null {
@@ -78,22 +140,65 @@ class ApiClient {
   ): Promise<T> {
     const url = this.getFullUrl(endpoint);
     const token = this.getAuthToken();
+    
+    // Solo incluir el token si NO es una ruta de autenticación
+    const shouldIncludeAuth = !this.shouldExcludeAuth(endpoint);
 
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers,
-      },
-      ...options,
+    const makeRequest = async (authToken: string | null): Promise<Response> => {
+      const config: RequestInit = {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(authToken && shouldIncludeAuth && { 'Authorization': `Bearer ${authToken}` }),
+          ...options.headers,
+        },
+        ...options,
+      };
+
+      return fetch(url, config);
     };
 
-    console.log(`API Request - Headers:`, config.headers);
+    console.log(`API Request - ${options.method || 'GET'} ${url}`);
+    console.log(`API Request - Include Auth: ${shouldIncludeAuth}`);
 
     try {
-      const response = await fetch(url, config);
-      console.log(`API Request - ${config.method || 'GET'} ${url}`);
+      let response = await makeRequest(token);
+      
+      // Si la respuesta es 401 (Unauthorized) y no es una ruta de auth, intentar refresh
+      if (response.status === 401 && shouldIncludeAuth && !this.shouldExcludeAuth(endpoint)) {
+        console.log('🔄 Token expired, attempting refresh...');
+        
+        if (this.isRefreshing) {
+          // Si ya estamos refrescando, agregar a la cola
+          return new Promise<T>((resolve, reject) => {
+            this.failedQueue.push({
+              resolve: (newToken: string) => {
+                makeRequest(newToken)
+                  .then(response => response.json())
+                  .then(resolve)
+                  .catch(reject);
+              },
+              reject
+            });
+          });
+        }
+
+        this.isRefreshing = true;
+
+        try {
+          const newToken = await this.refreshAuthToken();
+          await this.processQueue(null, newToken);
+          
+          // Reintentar la petición original con el nuevo token
+          response = await makeRequest(newToken);
+        } catch (refreshError) {
+          await this.processQueue(refreshError as Error);
+          throw refreshError;
+        } finally {
+          this.isRefreshing = false;
+        }
+      }
+
       console.log('API Request - Response status:', response.status);
       
       const data = await response.json();

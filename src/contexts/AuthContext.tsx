@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User } from '@/models';
 import { authService } from '@/services/authService';
 
@@ -9,9 +9,13 @@ interface AuthContextType {
   register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  tokenExpiresIn: number | null;
+  refreshToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export { AuthContext };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

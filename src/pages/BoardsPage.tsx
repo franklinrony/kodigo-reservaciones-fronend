@@ -37,9 +37,9 @@ export const BoardsPage: React.FC = () => {
   if (loading) {
     console.log('BoardsPage - Mostrando loading...');
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kodigo-primary mx-auto mb-4"></div>
           <p className="text-gray-600">Cargando tableros...</p>
         </div>
       </div>
@@ -63,24 +63,26 @@ export const BoardsPage: React.FC = () => {
   console.log('BoardsPage - ¿Mostrar grilla de tableros?', filteredBoards.length > 0);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mis Tableros</h1>
-          <p className="text-gray-600 mt-1">
-            Gestiona todos tus proyectos desde un solo lugar
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-kodigo-gradient">Mis Tableros</h1>
+            <p className="text-gray-600 mt-1">
+              Gestiona todos tus proyectos desde un solo lugar
+            </p>
+          </div>
+          
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="mt-4 sm:mt-0"
+            variant="gradient"
+          >
+            <Plus size={20} className="mr-2" />
+            Crear Tablero
+          </Button>
         </div>
-        
-        <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="mt-4 sm:mt-0"
-        >
-          <Plus size={20} className="mr-2" />
-          Crear Tablero
-        </Button>
-      </div>
 
       {/* Search Bar */}
       <div className="relative mb-8">
@@ -92,17 +94,17 @@ export const BoardsPage: React.FC = () => {
           placeholder="Buscar tableros..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-kodigo-primary focus:border-kodigo-primary"
         />
       </div>
 
       {/* Boards Grid */}
       {filteredBoards.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Plus size={32} className="text-gray-400" />
+          <div className="w-24 h-24 bg-kodigo-light/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Plus size={32} className="text-kodigo-primary" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-kodigo-gradient mb-2">
             {searchTerm ? 'No se encontraron tableros' : 'No tienes tableros aún'}
           </h3>
           <p className="text-gray-600 mb-6">
@@ -112,7 +114,7 @@ export const BoardsPage: React.FC = () => {
             }
           </p>
           {!searchTerm && (
-            <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Button onClick={() => setIsCreateModalOpen(true)} variant="gradient">
               <Plus size={20} className="mr-2" />
               Crear mi primer tablero
             </Button>
@@ -132,6 +134,7 @@ export const BoardsPage: React.FC = () => {
         onClose={() => setIsCreateModalOpen(false)}
         onCreateBoard={handleCreateBoard}
       />
+      </div>
     </div>
   );
 };

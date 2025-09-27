@@ -1,3 +1,82 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --kodigo-primary: 107 70 193;
+    --kodigo-secondary: 236 72 153;
+    --kodigo-accent: 249 115 22;
+    --kodigo-dark: 76 29 149;
+    --kodigo-light: 221 214 254;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-kodigo-primary {
+    @apply bg-kodigo-primary hover:bg-kodigo-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-kodigo-secondary {
+    @apply bg-kodigo-secondary hover:bg-pink-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-kodigo-gradient {
+    background: linear-gradient(135deg, #6B46C1 0%, #EC4899 50%, #F97316 100%);
+    @apply hover:opacity-90 text-white font-medium py-2 px-4 rounded-lg transition-opacity duration-200;
+  }
+  
+  .card-kodigo {
+    @apply bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .navbar-kodigo {
+    background: linear-gradient(135deg, #6B46C1 0%, #EC4899 50%, #F97316 100%);
+    @apply shadow-lg;
+  }
+  
+  .sidebar-kodigo {
+    @apply bg-white border-r border-gray-200;
+  }
+}
+
+@layer utilities {
+  .bg-kodigo-gradient {
+    background: linear-gradient(135deg, #6B46C1 0%, #EC4899 50%, #F97316 100%);
+  }
+  
+  .text-kodigo-gradient {
+    background: linear-gradient(135deg, #6B46C1 0%, #EC4899 50%, #F97316 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes shrink {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0%;
+    }
+  }
+}

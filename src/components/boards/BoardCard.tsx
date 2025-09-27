@@ -12,7 +12,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
   return (
     <Link
       to={`/board/${board.id}`}
-      className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-200"
+      className="block card-kodigo p-6 hover:shadow-xl hover:scale-105 transition-all duration-300 border-l-4 border-kodigo-primary"
     >
       <div className="flex justify-between items-start mb-4">
         <div>
@@ -21,9 +21,13 @@ export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
         </div>
         <div className="flex items-center space-x-2">
           {board.is_public ? (
-            <Globe className="w-4 h-4 text-green-500" />
+            <div className="p-1 bg-green-100 rounded-full">
+              <Globe className="w-4 h-4 text-green-600" />
+            </div>
           ) : (
-            <Lock className="w-4 h-4 text-gray-400" />
+            <div className="p-1 bg-gray-100 rounded-full">
+              <Lock className="w-4 h-4 text-gray-500" />
+            </div>
           )}
         </div>
       </div>
@@ -31,19 +35,19 @@ export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
       <div className="flex items-center justify-between text-sm text-gray-500">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-1">
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-4 h-4 text-kodigo-primary" />
             <span>{format(new Date(board.created_at), 'dd/MM/yyyy')}</span>
           </div>
           {board.collaborators && board.collaborators.length > 0 && (
             <div className="flex items-center space-x-1">
-              <Users className="w-4 h-4" />
+              <Users className="w-4 h-4 text-kodigo-secondary" />
               <span>{board.collaborators.length} colaboradores</span>
             </div>
           )}
         </div>
         
         {board.lists && (
-          <span className="text-blue-600 font-medium">
+          <span className="text-kodigo-primary font-medium bg-kodigo-primary/10 px-2 py-1 rounded-full">
             {board.lists.length} listas
           </span>
         )}

@@ -44,6 +44,38 @@ export const authService = {
     return response;
   },
 
+  // Método para verificar si el token está expirado
+  isTokenExpired(): boolean {
+    const token = this.getToken();
+    if (!token) return true;
+
+    try {
+      // Decodificar el JWT para verificar la fecha de expiración
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      
+      // Si no hay exp o está expirado
+      return !payload.exp || payload.exp < currentTime;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return true; // Si no se puede decodificar, considerar expirado
+    }
+  },
+
+  // Método para obtener tiempo restante del token
+  getTokenExpirationTime(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp ? payload.exp * 1000 : null; // Convertir a millisegundos
+    } catch (error) {
+      console.error('Error decoding token expiration:', error);
+      return null;
+    }
+  },
+
   setToken(token: string): void {
     localStorage.setItem('auth_token', token);
   },

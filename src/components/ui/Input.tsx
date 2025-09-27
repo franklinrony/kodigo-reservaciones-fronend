@@ -29,7 +29,7 @@ export const Input: React.FC<InputProps> = ({
         )}
         <input
           className={clsx(
-            'block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm',
+            'block w-full rounded-lg border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary sm:text-sm transition-colors duration-200',
             {
               'pl-10': icon,
               'border-red-300 focus:ring-red-500 focus:border-red-500': error,

@@ -4,6 +4,7 @@ import { KanbanCard } from '../cards/KanbanCard';
 import { Button } from '../ui/Button';
 import { Plus, MoreHorizontal, Trash2, Edit3 } from 'lucide-react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
+import { useNotification } from '../../hooks/useNotification';
 
 interface KanbanListProps {
   list: BoardList;
@@ -31,6 +32,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
   const [editedTitle, setEditedTitle] = useState(list.name);
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { showNotification } = useNotification();
   
   const titleInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -63,8 +65,10 @@ export const KanbanList: React.FC<KanbanListProps> = ({
       await onCreateCard(list.id, { title: newCardTitle });
       setNewCardTitle('');
       setIsAddingCard(false);
+      showNotification('success', 'Tarjeta creada correctamente');
     } catch (error) {
       console.error('Error creating card:', error);
+      showNotification('error', error instanceof Error ? error.message : 'Error al crear la tarjeta');
     } finally {
       setLoading(false);
     }
@@ -81,8 +85,10 @@ export const KanbanList: React.FC<KanbanListProps> = ({
       try {
         await onUpdateList(list.id, { name: editedTitle.trim() });
         setIsEditingTitle(false);
+        showNotification('success', 'Lista actualizada correctamente');
       } catch (error) {
         console.error('Error updating list title:', error);
+        showNotification('error', error instanceof Error ? error.message : 'Error al actualizar el título de la lista');
         setEditedTitle(list.name);
         setIsEditingTitle(false);
       }
@@ -103,8 +109,10 @@ export const KanbanList: React.FC<KanbanListProps> = ({
     setIsDeleting(true);
     try {
       await onDeleteList(list.id);
+      showNotification('success', 'Lista eliminada correctamente');
     } catch (error) {
       console.error('Error deleting list:', error);
+      showNotification('error', error instanceof Error ? error.message : 'Error al eliminar la lista');
       setIsDeleting(false);
     }
   };
@@ -115,7 +123,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className="bg-gray-100 rounded-lg p-4 w-80 flex-shrink-0"
+          className="bg-white rounded-lg p-4 w-80 flex-shrink-0 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200"
         >
           <div {...provided.dragHandleProps} className="flex items-center justify-between mb-4">
             {isEditingTitle ? (
@@ -135,11 +143,11 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                     setEditedTitle(list.name);
                   }
                 }}
-                className="font-medium text-gray-900 bg-transparent border-0 outline-none ring-2 ring-blue-500 rounded px-2 py-1 -mx-2 -my-1 w-full"
+                className="font-medium text-kodigo-primary bg-transparent border-0 outline-none ring-2 ring-kodigo-primary rounded px-2 py-1 -mx-2 -my-1 w-full"
               />
             ) : (
               <h3 
-                className="font-medium text-gray-900 cursor-pointer hover:bg-gray-200 rounded px-2 py-1 -mx-2 -my-1 transition-colors"
+                className="font-medium text-kodigo-primary cursor-pointer hover:bg-kodigo-light/20 rounded px-2 py-1 -mx-2 -my-1 transition-colors"
                 onClick={() => setIsEditingTitle(true)}
                 title="Haz clic para editar"
               >
@@ -147,15 +155,15 @@ export const KanbanList: React.FC<KanbanListProps> = ({
               </h3>
             )}
             <div className="flex items-center space-x-1">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-kodigo-secondary font-medium bg-kodigo-secondary/10 px-2 py-1 rounded-full">
                 {list.cards?.length || 0}
               </span>
               <div className="relative" ref={menuRef}>
                 <button 
-                  className="p-1 hover:bg-gray-200 rounded"
+                  className="p-1 hover:bg-kodigo-light/20 rounded transition-colors duration-200"
                   onClick={() => setShowMenu(!showMenu)}
                 >
-                  <MoreHorizontal size={16} className="text-gray-500" />
+                  <MoreHorizontal size={16} className="text-kodigo-primary" />
                 </button>
                 {showMenu && (
                   <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]">
@@ -164,7 +172,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                         setIsEditingTitle(true);
                         setShowMenu(false);
                       }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-kodigo-light/20 flex items-center space-x-2 text-kodigo-primary"
                     >
                       <Edit3 size={14} />
                       <span>Editar título</span>
@@ -175,7 +183,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                         setShowMenu(false);
                       }}
                       disabled={isDeleting}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 text-red-600 flex items-center space-x-2 disabled:opacity-50"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center space-x-2 disabled:opacity-50"
                     >
                       <Trash2 size={14} />
                       <span>{isDeleting ? 'Eliminando...' : 'Eliminar lista'}</span>
@@ -192,7 +200,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className={`min-h-20 ${
-                  snapshot.isDraggingOver ? 'bg-blue-50 rounded-md' : ''
+                  snapshot.isDraggingOver ? 'bg-kodigo-light/30 rounded-md' : ''
                 }`}
               >
                 {list.cards?.map((card, cardIndex) => (
@@ -207,12 +215,12 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                 {provided.placeholder}
                 
                 {isAddingCard ? (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3">
+                  <div className="bg-white rounded-lg shadow-sm border border-kodigo-primary/20 p-4 mb-3">
                     <textarea
                       value={newCardTitle}
                       onChange={(e) => setNewCardTitle(e.target.value)}
                       placeholder="Ingresa un título para esta tarjeta..."
-                      className="w-full resize-none border-0 focus:ring-0 p-0 text-sm"
+                      className="w-full resize-none border-0 focus:ring-0 p-0 text-sm focus:outline-none"
                       rows={3}
                       autoFocus
                     />
@@ -221,6 +229,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                         size="sm"
                         onClick={handleCreateCard}
                         loading={loading}
+                        variant="gradient"
                       >
                         Agregar tarjeta
                       </Button>
@@ -229,7 +238,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                           setIsAddingCard(false);
                           setNewCardTitle('');
                         }}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-gray-500 hover:text-kodigo-primary transition-colors duration-200"
                       >
                         ✕
                       </button>
@@ -238,7 +247,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                 ) : (
                   <button
                     onClick={() => setIsAddingCard(true)}
-                    className="flex items-center space-x-2 text-gray-500 hover:text-gray-700 w-full p-3 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="flex items-center space-x-2 text-kodigo-primary hover:text-kodigo-dark w-full p-3 rounded-lg hover:bg-kodigo-light/20 transition-all duration-200"
                   >
                     <Plus size={16} />
                     <span className="text-sm">Agregar una tarjeta</span>

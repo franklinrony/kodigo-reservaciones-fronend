@@ -45,8 +45,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={handleCardClick}
-          className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3 cursor-pointer hover:shadow-md transition-shadow ${
-            snapshot.isDragging ? 'shadow-lg rotate-3' : ''
+          className={`bg-white rounded-lg shadow-sm border-l-4 border-kodigo-primary p-4 mb-3 cursor-pointer hover:shadow-md hover:scale-105 transition-all duration-200 ${
+            snapshot.isDragging ? 'shadow-xl rotate-3 scale-105' : ''
           }`}
         >
           <div className="inline-edit">
@@ -76,7 +76,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               {card.labels.map(label => (
                 <span
                   key={label.id}
-                  className="px-2 py-1 text-xs font-medium rounded"
+                  className="px-2 py-1 text-xs font-medium rounded-full"
                   style={{
                     backgroundColor: label.color + '20',
                     color: label.color
@@ -88,17 +88,17 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             </div>
           )}
           
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs">
             <div className="flex items-center space-x-3">
               {card.due_date && (
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 text-kodigo-accent">
                   <Calendar size={12} />
                   <span>{format(new Date(card.due_date), 'dd/MM')}</span>
                 </div>
               )}
               
               {card.comments && card.comments.length > 0 && (
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 text-kodigo-secondary">
                   <MessageCircle size={12} />
                   <span>{card.comments.length}</span>
                 </div>
@@ -106,7 +106,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             </div>
             
             {card.user && (
-              <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 bg-kodigo-gradient rounded-full flex items-center justify-center shadow-sm">
                 <span className="text-white text-xs font-medium">
                   {card.user.name.charAt(0).toUpperCase()}
                 </span>

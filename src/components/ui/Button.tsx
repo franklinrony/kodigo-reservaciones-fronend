@@ -2,7 +2,7 @@ import React from 'react';
 import { clsx } from 'clsx';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'gradient' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   children: React.ReactNode;
@@ -17,19 +17,23 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
+  const isGradient = variant === 'gradient';
+  
   return (
     <button
       className={clsx(
-        'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
         {
-          // Primary variant - Kodigo blue
-          'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500': variant === 'primary',
-          // Secondary variant
-          'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500': variant === 'secondary',
+          // Primary variant - Kodigo primary color
+          'bg-kodigo-primary text-white hover:bg-kodigo-dark focus:ring-kodigo-primary shadow-md hover:shadow-lg': variant === 'primary',
+          // Secondary variant - Kodigo secondary color
+          'bg-kodigo-secondary text-white hover:bg-pink-600 focus:ring-kodigo-secondary shadow-md hover:shadow-lg': variant === 'secondary',
+          // Gradient variant - will be handled by inline style
+          'text-white hover:opacity-90 focus:ring-kodigo-primary shadow-md hover:shadow-lg': variant === 'gradient',
           // Danger variant
-          'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': variant === 'danger',
+          'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-md hover:shadow-lg': variant === 'danger',
           // Ghost variant
-          'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500': variant === 'ghost',
+          'bg-transparent text-kodigo-primary hover:bg-kodigo-light focus:ring-kodigo-primary': variant === 'ghost',
           // Sizes
           'px-3 py-2 text-sm': size === 'sm',
           'px-4 py-2 text-base': size === 'md',
@@ -37,6 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
         },
         className
       )}
+      style={isGradient ? { background: 'linear-gradient(135deg, #6B46C1 0%, #EC4899 50%, #F97316 100%)' } : undefined}
       disabled={disabled || loading}
       {...props}
     >
