@@ -18,6 +18,7 @@ interface CardModalProps {
   boardLists?: Array<{ id: number; name: string }>;
   boardId: number; // ID del tablero para consultar usuarios
   boardOwnerId?: number; // ID del propietario del tablero
+  boardLabels?: Array<{ id: number; name: string; priority?: string }>; // Etiquetas del tablero
 }
 
 export const CardModal: React.FC<CardModalProps> = ({
@@ -27,7 +28,8 @@ export const CardModal: React.FC<CardModalProps> = ({
   onUpdateCard,
   boardLists = [],
   boardId,
-  boardOwnerId
+  boardOwnerId,
+  boardLabels = []
 }) => {
   const { user: currentUser } = useAuth();
   const { canEdit, boardUsers } = useBoardPermissions(boardId);
@@ -35,6 +37,26 @@ export const CardModal: React.FC<CardModalProps> = ({
   // Estados para los datos de usuarios
   const [cardCreator, setCardCreator] = useState<User | null>(null);
   const [assignedByUser, setAssignedByUser] = useState<User | null>(null);
+
+  // Función para convertir prioridad a label_id
+  const getLabelIdForPriority = useCallback((selectedPriority: 'baja' | 'media' | 'alta' | 'extremo'): number | undefined => {
+    // Buscar el label que corresponda a la prioridad por nombre
+    const priorityLabelMap = {
+      'baja': ['Bajo', 'baja'],
+      'media': ['Medio', 'media'], 
+      'alta': ['Alto', 'alta'],
+      'extremo': ['Extremo', 'extremo']
+    };
+
+    const possibleNames = priorityLabelMap[selectedPriority];
+    const label = boardLabels.find(label => 
+      possibleNames.some(name => 
+        label.name.toLowerCase().includes(name.toLowerCase())
+      )
+    );
+
+    return label?.id;
+  }, [boardLabels]);
 
   // Calcular permisos del usuario actual usando el hook
   const userCanEdit = canEdit;
@@ -273,13 +295,11 @@ export const CardModal: React.FC<CardModalProps> = ({
       }
 
       if (priority !== originalData?.priority) {
-        payload.priority = priority;
-      }
-
-      // Si la card tiene una etiqueta de prioridad, incluirla como array
-      if (card.labels && card.labels.length > 0) {
-        // Por ahora solo enviamos la primera etiqueta como prioridad
-        payload.label_ids = [card.labels[0].id];
+        // Convertir la prioridad seleccionada al correspondiente label_id
+        const priorityLabelId = getLabelIdForPriority(priority);
+        if (priorityLabelId) {
+          payload.label_ids = [priorityLabelId];
+        }
       }
 
       console.log('CardModal - Current values:', {
