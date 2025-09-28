@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, ReactNode, useState } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { boardService } from '@/services/boardService';
 import { userService } from '@/services/userService';
@@ -19,6 +19,7 @@ interface BoardPermissions {
 interface BoardPermissionsContextType {
   getBoardPermissions: (boardId: number) => BoardPermissions;
   getBoardUsers: (boardId: number) => User[] | undefined;
+  preloadBoardPermissions: (boardIds: number[]) => Promise<void>;
 }
 
 const BoardPermissionsContext = createContext<BoardPermissionsContextType | undefined>(undefined);
@@ -42,7 +43,7 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
   const { user } = useAuth();
   const [, forceUpdate] = useState({}); // Para forzar re-renders
 
-  const getBoardPermissions = (boardId: number): BoardPermissions => {
+  const getBoardPermissions = useCallback((boardId: number): BoardPermissions => {
     // Retornar del cache si existe
     if (boardPermissionsCache.has(boardId)) {
       return boardPermissionsCache.get(boardId)!;
@@ -65,12 +66,12 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
     loadBoardPermissions(boardId, user?.id);
 
     return loadingPermissions;
-  };
+  }, [user?.id]);
 
-  const getBoardUsers = (boardId: number): User[] | undefined => {
+  const getBoardUsers = useCallback((boardId: number): User[] | undefined => {
     const permissions = getBoardPermissions(boardId);
     return permissions.boardUsers;
-  };
+  }, [getBoardPermissions]);
 
   const loadBoardPermissions = async (boardId: number, userId?: number) => {
     if (!userId) {
@@ -101,19 +102,41 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
         userRole = 'owner';
       }
 
-      // Intentar cargar usuarios, pero manejar errores gracefully
+      // Intentar usar los collaborators del board, o cargar usuarios si no están disponibles
       let boardUsers: User[] = [];
       try {
-        boardUsers = await userService.getBoardUsers(boardId);
-        console.log('BoardPermissionsProvider - Board users:', boardUsers);
+        // Si el board ya incluye collaborators, úsalos
+        if (board.collaborators && board.collaborators.length > 0) {
+          // Los collaborators ya incluyen la info del usuario
+          boardUsers = board.collaborators.map(collaborator => ({
+            id: collaborator.id,
+            name: collaborator.name,
+            email: collaborator.email,
+            created_at: collaborator.created_at,
+            updated_at: collaborator.updated_at,
+            role: (collaborator.pivot?.role as 'owner' | 'admin' | 'editor' | 'viewer') || undefined
+          }));
+          console.log('BoardPermissionsProvider - Using collaborators from board:', boardUsers);
+        } else {
+          // Fallback: cargar usuarios con llamada adicional
+          boardUsers = await userService.getBoardUsers(boardId);
+          console.log('BoardPermissionsProvider - Board users loaded separately:', boardUsers);
+        }
 
         // Si no somos owner, determinar rol basado en la lista de usuarios
         if (userRole !== 'owner') {
           const boardUser = boardUsers.find(user => user.id === userId);
+          console.log('BoardPermissionsProvider - Finding user role:', {
+            userId,
+            boardUsers: boardUsers.map(u => ({ id: u.id, role: u.role })),
+            foundUser: boardUser
+          });
           if (boardUser) {
             userRole = boardUser.role as UserBoardRole || 'editor';
+            console.log('BoardPermissionsProvider - Assigned role:', userRole);
           } else {
             userRole = null;
+            console.log('BoardPermissionsProvider - User not found in collaborators, role: null');
           }
         }
       } catch (usersError) {
@@ -157,6 +180,11 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
     }
   };
 
+  const preloadBoardPermissions = useCallback(async (boardIds: number[]) => {
+    const promises = boardIds.map(boardId => loadBoardPermissions(boardId, user?.id));
+    await Promise.all(promises);
+  }, [user?.id]);
+
   // Limpiar cache cuando cambia el usuario
   useEffect(() => {
     boardPermissionsCache.clear();
@@ -164,7 +192,8 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
 
   const contextValue: BoardPermissionsContextType = {
     getBoardPermissions,
-    getBoardUsers
+    getBoardUsers,
+    preloadBoardPermissions
   };
 
   return (

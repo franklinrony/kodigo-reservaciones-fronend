@@ -46,22 +46,31 @@ export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
     if (!currentUser) return null;
 
     const isOwner = board.user_id === currentUser.id;
-    const hasCollaborators = (board.collaborators_count || 0) > 0;
+    // Usar collaborators del board si están disponibles, sino usar collaborators_count
+    const collaborators = board.collaborators || [];
+    const hasAdditionalCollaborators = collaborators.length > 0;
 
-    if (isOwner && !hasCollaborators) {
-      return (
-        <div title="Propietario" className="p-1 bg-green-100 rounded-full">
-          <User className="w-3 h-3 text-green-600" />
-        </div>
-      );
-    } else if (hasCollaborators || !isOwner) {
+    if (isOwner) {
+      if (!hasAdditionalCollaborators) {
+        return (
+          <div title="Propietario" className="p-1 bg-green-100 rounded-full">
+            <User className="w-3 h-3 text-green-600" />
+          </div>
+        );
+      } else {
+        return (
+          <div title="Compartido (Propietario)" className="p-1 bg-blue-100 rounded-full">
+            <Users className="w-3 h-3 text-blue-600" />
+          </div>
+        );
+      }
+    } else {
       return (
         <div title="Compartido" className="p-1 bg-purple-100 rounded-full">
           <Users className="w-3 h-3 text-purple-600" />
         </div>
       );
     }
-    return null;
   };
   return (
     <Link

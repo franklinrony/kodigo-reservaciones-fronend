@@ -1,13 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Board } from '@/models';
 import { boardService } from '@/services/boardService';
+import { useBoardPermissionsContext } from '@/contexts/BoardPermissionsContext';
 
 export const useBoards = () => {
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { preloadBoardPermissions } = useBoardPermissionsContext();
+  
+  // Usar ref para mantener una referencia estable a la función
+  const preloadBoardPermissionsRef = useRef(preloadBoardPermissions);
+  preloadBoardPermissionsRef.current = preloadBoardPermissions;
 
-  const fetchBoards = async () => {
+  const fetchBoards = useCallback(async () => {
     try {
       console.log('useBoards - Iniciando fetch de tableros...');
       setLoading(true);
@@ -17,17 +23,25 @@ export const useBoards = () => {
       console.log('useBoards - Es array?:', Array.isArray(data));
       setBoards(data);
       setError(null);
+
+      // Precargar permisos de todos los tableros
+      if (data && data.length > 0) {
+        const boardIds = data.map(board => board.id);
+        console.log('useBoards - Precargando permisos para boards:', boardIds);
+        await preloadBoardPermissionsRef.current(boardIds);
+        console.log('useBoards - Permisos precargados');
+      }
     } catch (err) {
       console.error('useBoards - Error al obtener tableros:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch boards');
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Sin dependencias para evitar re-ejecuciones
 
   useEffect(() => {
     fetchBoards();
-  }, []);
+  }, [fetchBoards]);
 
   const createBoard = async (boardData: { name: string; description?: string; is_public?: boolean }) => {
     try {

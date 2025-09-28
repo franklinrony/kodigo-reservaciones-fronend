@@ -70,12 +70,21 @@ export interface BoardList {
 // Tipo para colaboradores con usuario completo
 export interface BoardCollaborator {
   id: number;
+  name: string;
+  email: string;
   board_id: number;
   user_id: number;
   role: 'viewer' | 'editor' | 'admin';
   created_at: string;
   updated_at: string;
   user?: User;
+  pivot?: {
+    board_id: number;
+    user_id: number;
+    role: string;
+    created_at: string;
+    updated_at: string;
+  };
 }
 
 // Tipo para tablero con relaciones completas
