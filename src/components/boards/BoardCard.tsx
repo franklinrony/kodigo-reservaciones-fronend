@@ -1,14 +1,64 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Board } from '@/models';
-import { Calendar, Users, Lock, Globe } from 'lucide-react';
+import { Calendar, Users, Lock, Globe, Eye, Edit3, Crown, User } from 'lucide-react';
 import { format } from 'date-fns';
+import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 
 interface BoardCardProps {
   board: Board;
 }
 
 export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
+  const { userRole, boardUsers } = useBoardPermissions(board.id);
+
+  // Función para obtener el icono del rol
+  const getRoleIcon = () => {
+    switch (userRole) {
+      case 'viewer':
+        return (
+          <div title="Viewer" className="p-1 bg-blue-100 rounded-full">
+            <Eye className="w-3 h-3 text-blue-600" />
+          </div>
+        );
+      case 'editor':
+        return (
+          <div title="Editor" className="p-1 bg-orange-100 rounded-full">
+            <Edit3 className="w-3 h-3 text-orange-600" />
+          </div>
+        );
+      case 'admin':
+      case 'owner':
+        return (
+          <div title="Admin/Owner" className="p-1 bg-yellow-100 rounded-full">
+            <Crown className="w-3 h-3 text-yellow-600" />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Función para obtener el icono de propiedad/compartido
+  const getOwnershipIcon = () => {
+    const isOwner = userRole === 'owner';
+    const hasCollaborators = boardUsers && boardUsers.length > 1;
+
+    if (isOwner && !hasCollaborators) {
+      return (
+        <div title="Propietario" className="p-1 bg-green-100 rounded-full">
+          <User className="w-3 h-3 text-green-600" />
+        </div>
+      );
+    } else if (hasCollaborators) {
+      return (
+        <div title="Compartido" className="p-1 bg-purple-100 rounded-full">
+          <Users className="w-3 h-3 text-purple-600" />
+        </div>
+      );
+    }
+    return null;
+  };
   return (
     <Link
       to={`/board/${board.id}`}
@@ -20,6 +70,8 @@ export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
           <p className="text-gray-600 text-sm line-clamp-2">{board.description}</p>
         </div>
         <div className="flex items-center space-x-2">
+          {getRoleIcon()}
+          {getOwnershipIcon()}
           {board.is_public ? (
             <div className="p-1 bg-green-100 rounded-full">
               <Globe className="w-4 h-4 text-green-600" />
