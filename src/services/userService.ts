@@ -11,6 +11,16 @@ interface LaravelUsersResponse {
   users: User[];
 }
 
+interface LaravelPaginatedUsersResponse {
+  users: {
+    data: User[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
 export const userService = {
   async getUserById(userId: number): Promise<User> {
     const response = await apiClient.get<LaravelUserResponse>(`/api/v1/users/${userId}`);
@@ -23,7 +33,7 @@ export const userService = {
   },
 
   async getAllUsers(): Promise<User[]> {
-    const response = await apiClient.get<LaravelUsersResponse>('/api/v1/users');
-    return extractLaravelData<User[]>(response, 'users');
+    const response = await apiClient.get<LaravelPaginatedUsersResponse>('/api/v1/users');
+    return response.users.data;
   }
 };

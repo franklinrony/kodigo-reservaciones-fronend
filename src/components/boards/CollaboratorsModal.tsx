@@ -3,7 +3,7 @@ import { Search, User, Plus, X, Check } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { User as UserType, BoardCollaborator } from '@/models';
+import { User as UserType } from '@/models';
 import { userService } from '@/services/userService';
 import { boardService } from '@/services/boardService';
 import { useNotification } from '@/hooks/useNotification';
@@ -35,7 +35,6 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
   // Estados
   const [searchTerm, setSearchTerm] = useState('');
   const [allUsers, setAllUsers] = useState<UserWithRole[]>([]);
-  const [collaborators, setCollaborators] = useState<BoardCollaborator[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [addingUsers, setAddingUsers] = useState(false);
@@ -47,21 +46,20 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
       // Cargar todos los usuarios y colaboradores en paralelo
       const [usersResponse, collaboratorsResponse] = await Promise.all([
         userService.getAllUsers(),
-        boardService.getCollaborators(boardId.toString())
+        userService.getBoardUsers(boardId)
       ]);
 
       // Marcar cuáles usuarios ya son colaboradores
       const usersWithRoles: UserWithRole[] = usersResponse.map(user => {
-        const collaborator = collaboratorsResponse.find(col => col.user_id === user.id);
+        const isCollaborator = collaboratorsResponse.some(col => col.id === user.id);
         return {
           ...user,
-          role: collaborator?.role,
-          isCollaborator: !!collaborator
+          role: isCollaborator ? 'editor' : undefined, // Asumir editor por defecto
+          isCollaborator: isCollaborator
         };
       });
 
       setAllUsers(usersWithRoles);
-      setCollaborators(collaboratorsResponse);
     } catch (error) {
       console.error('Error loading collaborators data:', error);
       showNotification('error', 'Error al cargar los datos de colaboradores');
@@ -135,25 +133,16 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
   };
 
   // Cambiar rol de un colaborador
-  const changeCollaboratorRole = async (collaboratorId: number, newRole: 'viewer' | 'editor' | 'admin') => {
+  const changeCollaboratorRole = async (userId: number, newRole: 'viewer' | 'editor' | 'admin') => {
     try {
-      await boardService.updateCollaborator(boardId.toString(), collaboratorId.toString(), newRole);
+      await boardService.updateCollaborator(boardId.toString(), userId.toString(), newRole);
 
       showNotification('success', 'Rol actualizado correctamente');
 
-      // Actualizar estado local
-      setCollaborators(prev =>
-        prev.map(col =>
-          col.id === collaboratorId ? { ...col, role: newRole } : col
-        )
-      );
-
-      // Actualizar también en allUsers
+      // Actualizar estado local en allUsers
       setAllUsers(prev =>
         prev.map(user =>
-          user.id === collaborators.find(c => c.id === collaboratorId)?.user_id
-            ? { ...user, role: newRole }
-            : user
+          user.id === userId ? { ...user, role: newRole } : user
         )
       );
 
@@ -165,7 +154,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
   };
 
   // Remover colaborador
-  const removeCollaborator = async (userId: number, collaboratorId: number) => {
+  const removeCollaborator = async (userId: number) => {
     if (!confirm('¿Estás seguro de que deseas remover a este colaborador del tablero?')) {
       return;
     }
@@ -175,8 +164,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
 
       showNotification('success', 'Colaborador removido correctamente');
 
-      // Actualizar estado local
-      setCollaborators(prev => prev.filter(col => col.id !== collaboratorId));
+      // Actualizar estado local en allUsers
       setAllUsers(prev =>
         prev.map(user =>
           user.id === userId
@@ -313,7 +301,6 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
           ) : (
             <div className="space-y-3">
               {existingCollaborators.map(user => {
-                const collaborator = collaborators.find(col => col.user_id === user.id);
                 return (
                   <div key={user.id} className="flex items-center justify-between p-3 bg-white border rounded-lg">
                     <div className="flex items-center space-x-3">
@@ -337,7 +324,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
                       {/* Selector de rol */}
                       <select
                         value={user.role || 'editor'}
-                        onChange={(e) => collaborator && changeCollaboratorRole(collaborator.id, e.target.value as 'viewer' | 'editor' | 'admin')}
+                        onChange={(e) => changeCollaboratorRole(user.id, e.target.value as 'viewer' | 'editor' | 'admin')}
                         disabled={user.id === currentUserId}
                         className={`px-3 py-1 text-sm rounded-full border-0 flex items-center space-x-1 ${getRoleColor(user.role || 'editor')} disabled:opacity-50`}
                       >
@@ -349,7 +336,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
                       {/* Botón remover (solo si no es el usuario actual) */}
                       {user.id !== currentUserId && (
                         <button
-                          onClick={() => collaborator && removeCollaborator(user.id, collaborator.id)}
+                          onClick={() => removeCollaborator(user.id)}
                           className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                           title="Remover colaborador"
                         >
