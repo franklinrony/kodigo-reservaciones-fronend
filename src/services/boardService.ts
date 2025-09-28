@@ -6,6 +6,11 @@ import {
   BoardCollaborator
 } from '@/models';
 
+interface LaravelCollaboratorsResponse {
+  message: string;
+  collaborators: BoardCollaborator[];
+}
+
 export const boardService = {
   async getBoards(): Promise<Board[]> {
     console.log('boardService.getBoards - Haciendo llamada a /api/v1/boards...');
@@ -59,5 +64,10 @@ export const boardService = {
 
   async removeCollaborator(boardId: number, userId: number): Promise<void> {
     await apiClient.delete(`/api/v1/boards/${boardId}/collaborators/${userId}`);
+  },
+
+  async getCollaborators(boardId: string): Promise<BoardCollaborator[]> {
+    const response = await apiClient.get<LaravelCollaboratorsResponse>(`/api/v1/boards/${boardId}/collaborators`);
+    return extractLaravelData<BoardCollaborator[]>(response, 'collaborators');
   }
 };

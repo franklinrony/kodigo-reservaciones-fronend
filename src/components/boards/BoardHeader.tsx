@@ -1,21 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Board } from '@/models';
 import { Button } from '@/components/ui/Button';
+import { CollaboratorsModal } from './CollaboratorsModal';
 import { Settings, Users, Eye, Table, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BoardHeaderProps {
   board: Board;
   viewMode: 'kanban' | 'table';
   onViewModeChange: (mode: 'kanban' | 'table') => void;
+  onCollaboratorsUpdate?: () => void;
 }
 
 export const BoardHeader: React.FC<BoardHeaderProps> = ({
   board,
   viewMode,
-  onViewModeChange
+  onViewModeChange,
+  onCollaboratorsUpdate
 }) => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
 
   const handleBackToBoards = () => {
     navigate('/boards');
@@ -73,7 +79,12 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           </div>
           
           {/* Board Actions */}
-          <Button variant="ghost" size="sm" className="text-kodigo-secondary hover:text-kodigo-secondary/80 hover:bg-kodigo-secondary/10">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-kodigo-secondary hover:text-kodigo-secondary/80 hover:bg-kodigo-secondary/10"
+            onClick={() => setIsCollaboratorsModalOpen(true)}
+          >
             <Users size={16} className="mr-1" />
             Colaboradores
           </Button>
@@ -84,6 +95,16 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Modal de Colaboradores */}
+      <CollaboratorsModal
+        isOpen={isCollaboratorsModalOpen}
+        onClose={() => setIsCollaboratorsModalOpen(false)}
+        boardId={board.id}
+        boardName={board.name}
+        currentUserId={currentUser?.id || 0}
+        onCollaboratorsUpdate={onCollaboratorsUpdate || (() => {})}
+      />
     </div>
   );
 };

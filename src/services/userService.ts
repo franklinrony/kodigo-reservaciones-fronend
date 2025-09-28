@@ -20,5 +20,10 @@ export const userService = {
   async getBoardUsers(boardId: number): Promise<User[]> {
     const response = await apiClient.get<LaravelUsersResponse>(`/api/v1/boards/${boardId}/users`);
     return extractLaravelData<User[]>(response, 'users');
+  },
+
+  async getAllUsers(): Promise<User[]> {
+    const response = await apiClient.get<LaravelUsersResponse>('/api/v1/users');
+    return extractLaravelData<User[]>(response, 'users');
   }
 };
