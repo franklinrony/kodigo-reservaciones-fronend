@@ -36,10 +36,12 @@ export interface Card {
   description?: string;
   board_list_id: number;
   user_id: number;
+  assigned_user_id?: number; // ID del usuario asignado
   position: number;
   due_date?: string;
   is_completed: boolean;
   is_archived: boolean;
+  progress_percentage?: number; // Porcentaje de progreso (0-100)
   priority?: 'alta' | 'media' | 'baja'; // Prioridad derivada del label principal
   assigned_to?: string; // Usuario asignado (nombre)
   responsible?: string; // Responsable

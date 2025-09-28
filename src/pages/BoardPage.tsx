@@ -81,7 +81,7 @@ export const BoardPage: React.FC = () => {
         }}
         onUpdateCard={handleUpdateCard}
         boardLists={board.lists?.map(list => ({ id: list.id, name: list.name })) || []}
-        boardCollaborators={board.collaborators || []}
+        boardId={board.id}
         boardOwnerId={board.user_id}
       />
     </div>

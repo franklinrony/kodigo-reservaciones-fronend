@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, User, Save, MessageCircle } from 'lucide-react';
+import { Calendar, User as UserIcon, Save, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Modal } from '@/components/ui/Modal';
-import { Card, UpdateCardRequest, Comment, BoardCollaborator } from '@/models';
+import { Card, UpdateCardRequest, Comment, User } from '@/models';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { commentService } from '@/services/commentService';
+import { userService } from '@/services/userService';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface CardModalProps {
@@ -14,7 +15,7 @@ interface CardModalProps {
   onClose: () => void;
   onUpdateCard: (cardId: number, cardData: UpdateCardRequest) => Promise<void>;
   boardLists?: Array<{ id: number; name: string }>;
-  boardCollaborators?: BoardCollaborator[]; // Colaboradores del tablero
+  boardId: number; // ID del tablero para consultar usuarios
   boardOwnerId?: number; // ID del propietario del tablero
 }
 
@@ -24,12 +25,16 @@ export const CardModal: React.FC<CardModalProps> = ({
   onClose,
   onUpdateCard,
   boardLists = [],
-  boardCollaborators = [],
+  boardId,
   boardOwnerId
 }) => {
   const { user: currentUser } = useAuth();
 
-  // Calcular permisos del usuario actual
+  // Estados para los datos de usuarios
+  const [cardCreator, setCardCreator] = useState<User | null>(null);
+  const [boardUsers, setBoardUsers] = useState<User[]>([]);
+
+  // Calcular permisos del usuario actual (simplificado)
   const getCurrentUserRole = useCallback(() => {
     if (!currentUser || !boardOwnerId) return 'viewer';
     
@@ -38,46 +43,44 @@ export const CardModal: React.FC<CardModalProps> = ({
       return 'admin';
     }
     
-    // Buscar en colaboradores
-    const collaboration = boardCollaborators.find(collab => collab.user_id === currentUser.id);
-    return collaboration?.role || 'viewer';
-  }, [currentUser, boardOwnerId, boardCollaborators]);
+    // Por ahora asumimos editor para usuarios autenticados
+    return 'editor';
+  }, [currentUser, boardOwnerId]);
 
   const userRole = getCurrentUserRole();
   const canEdit = userRole === 'admin' || userRole === 'editor';
 
-  // Obtener lista de usuarios disponibles para asignar como responsables
-  const getAvailableUsers = useCallback((): Array<{ id: number; name: string; email: string }> => {
-    const users: Array<{ id: number; name: string; email: string }> = [];
-    
-    // Agregar propietario si existe
-    if (boardOwnerId) {
-      // Necesitaríamos la información completa del propietario
-      // Por ahora solo agregamos los colaboradores
+  // Función para cargar la información del creador de la tarjeta
+  const fetchCardCreator = useCallback(async (userId: number) => {
+    try {
+      const user = await userService.getUserById(userId);
+      setCardCreator(user);
+    } catch (error) {
+      console.error('Error fetching card creator:', error);
+      setCardCreator(null);
     }
-    
-    // Agregar colaboradores
-    boardCollaborators.forEach(collab => {
-      if (collab.user) {
-        users.push({
-          id: collab.user.id,
-          name: collab.user.name,
-          email: collab.user.email
-        });
-      }
-    });
-    
-    return users;
-  }, [boardOwnerId, boardCollaborators]);
+  }, []);
 
-  const availableUsers = getAvailableUsers();
+  // Función para cargar los usuarios del tablero
+  const fetchBoardUsers = useCallback(async () => {
+    if (!boardId) return;
+    
+    try {
+      const users = await userService.getBoardUsers(boardId);
+      setBoardUsers(users);
+      console.log('CardModal - Board users loaded:', users);
+    } catch (error) {
+      console.error('Error fetching board users:', error);
+      setBoardUsers([]);
+    }
+  }, [boardId]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(''); 
   const [assignedTo, setAssignedTo] = useState('');
-  const [responsible, setResponsible] = useState('');
   const [responsibleUserId, setResponsibleUserId] = useState<number | null>(null); // ID del usuario responsable
   const [selectedListId, setSelectedListId] = useState<number | null>(null);
+  const [progressPercentage, setProgressPercentage] = useState(0); // Progreso de la tarea (0-100)
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -89,69 +92,176 @@ export const CardModal: React.FC<CardModalProps> = ({
     description: string;
     dueDate: string;
     assignedTo: string;
-    responsible: string;
+    responsibleUserId: number | null;
     selectedListId: number | null;
+    progressPercentage: number;
   } | null>(null);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
 
-  const fetchComments = useCallback(async () => {
-    if (!card) return;
-    
+  const fetchComments = useCallback(async (cardId: number) => {
     setCommentsLoading(true);
     try {
-      const data = await commentService.getComments(card.id);
+      const data = await commentService.getComments(cardId);
       setComments(data);
     } catch (error) {
       console.error('Error fetching comments:', error);
+      setComments([]); // Resetear comentarios en caso de error
     } finally {
       setCommentsLoading(false);
     }
-  }, [card]);
+  }, []);
 
+  // Efecto principal para inicializar datos cuando cambia la card
   useEffect(() => {
-    if (card) {
-      const cardData = {
-        title: card.title,
+    if (!card) {
+      // Resetear estados cuando no hay card
+      setTitle('');
+      setDescription('');
+      setDueDate('');
+      setAssignedTo('');
+      setSelectedListId(null);
+      setResponsibleUserId(null);
+      setProgressPercentage(0);
+      setOriginalData(null);
+      setComments([]);
+      setCardCreator(null);
+      return;
+    }
+
+    console.log('CardModal - Card data:', card);
+    console.log('CardModal - card.user_id:', card.user_id);
+
+    const initialProgress = card.progress_percentage || 0;
+
+    const cardData = {
+      title: card.title,
+      description: card.description || '',
+      dueDate: card.due_date ? card.due_date.split('T')[0] : '', // Convertir ISO a yyyy-MM-dd
+      assignedTo: card.assigned_to || '',
+      responsibleUserId: null, // Se establecerá cuando se carguen los usuarios
+      selectedListId: card.board_list_id,
+      progressPercentage: initialProgress
+    };
+    
+    setTitle(cardData.title);
+    setDescription(cardData.description);
+    setDueDate(cardData.dueDate);
+    setAssignedTo(cardData.assignedTo);
+    setSelectedListId(cardData.selectedListId);
+    setProgressPercentage(initialProgress);
+    setOriginalData(cardData);
+
+    // Cargar comentarios y datos del usuario creador
+    fetchComments(card.id);
+    if (card.user_id) {
+      fetchCardCreator(card.user_id);
+    }
+  }, [card, fetchComments, fetchCardCreator]);
+
+  // Efecto para cargar usuarios del tablero cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && boardId) {
+      fetchBoardUsers();
+    }
+  }, [isOpen, boardId, fetchBoardUsers]);
+
+  // Efecto para establecer el responsable cuando se cargan los usuarios del tablero
+  useEffect(() => {
+    if (card && boardUsers.length > 0) {
+      console.log('Card data:', card);
+      console.log('Board users:', boardUsers);
+      
+      let responsibleUser = null;
+      let newResponsibleUserId = null;
+
+      // 1. Buscar por assigned_user_id si existe (campo correcto del backend)
+      if (card.assigned_user_id) {
+        responsibleUser = boardUsers.find(user => user.id === card.assigned_user_id);
+        console.log('Found by assigned_user_id:', responsibleUser);
+      }
+      
+      // 2. Si no se encontró, buscar por assigned_to (nombre)
+      if (!responsibleUser && card.assigned_to) {
+        responsibleUser = boardUsers.find(user => user.name === card.assigned_to);
+        console.log('Found by assigned_to:', responsibleUser);
+      }
+      
+      // 3. Si no se encontró, buscar por responsible (nombre)
+      if (!responsibleUser && card.responsible) {
+        responsibleUser = boardUsers.find(user => user.name === card.responsible);
+        console.log('Found by responsible:', responsibleUser);
+      }
+
+      newResponsibleUserId = responsibleUser?.id || null;
+      console.log('Setting responsibleUserId to:', newResponsibleUserId);
+      
+      // Solo actualizar si es diferente (inicialización)
+      setResponsibleUserId(newResponsibleUserId);
+      
+      // Actualizar también originalData para la primera carga
+      setOriginalData({
+        title: card.title || '',
         description: card.description || '',
         dueDate: card.due_date || '',
         assignedTo: card.assigned_to || '',
-        responsible: card.responsible || '',
-        selectedListId: card.board_list_id
-      };
-      
-      setTitle(cardData.title);
-      setDescription(cardData.description);
-      setDueDate(cardData.dueDate);
-      setAssignedTo(cardData.assignedTo);
-      setResponsible(cardData.responsible);
-      
-      // Intentar encontrar el ID del usuario responsable basado en el nombre
-      const responsibleUser = availableUsers.find(user => user.name === cardData.responsible);
-      setResponsibleUserId(responsibleUser?.id || null);
-      
-      setSelectedListId(cardData.selectedListId);
-      setOriginalData(cardData);
-      fetchComments();
+        responsibleUserId: newResponsibleUserId,
+        selectedListId: card.board_list_id,
+        progressPercentage: card.progress_percentage || 0
+      });
     }
-  }, [card, fetchComments, availableUsers]);
+  }, [card, boardUsers]); // Removido responsibleUserId de las dependencias
 
   const handleSave = async () => {
     if (!card) return;
     
     setLoading(true);
     try {
-      // Obtener el nombre del usuario responsable seleccionado
-      const selectedResponsibleUser = availableUsers.find(user => user.id === responsibleUserId);
-      const responsibleName = selectedResponsibleUser?.name || '';
+      // Construir payload limpio solo con campos que se pueden actualizar
+      const payload: UpdateCardRequest = {};
+
+      // Solo incluir campos que han cambiado o que tienen valor
+      if (title !== originalData?.title) {
+        payload.title = title;
+      }
       
-      await onUpdateCard(card.id, {
+      if (description !== originalData?.description) {
+        payload.description = description || undefined;
+      }
+
+      if (dueDate !== originalData?.dueDate) {
+        payload.due_date = dueDate || undefined;
+      }
+
+      if (responsibleUserId !== originalData?.responsibleUserId) {
+        payload.assigned_user_id = responsibleUserId || undefined;
+      }
+
+      if (progressPercentage !== originalData?.progressPercentage) {
+        payload.progress_percentage = progressPercentage;
+      }
+
+      if (selectedListId !== originalData?.selectedListId && selectedListId !== null) {
+        payload.list_id = selectedListId;
+      }
+
+      // Si la card tiene una etiqueta de prioridad, incluirla como array
+      if (card.labels && card.labels.length > 0) {
+        // Por ahora solo enviamos la primera etiqueta como prioridad
+        payload.label_ids = [card.labels[0].id];
+      }
+
+      console.log('CardModal - Current values:', {
         title,
         description,
-        due_date: dueDate || undefined,
-        assigned_to: assignedTo || undefined,
-        responsible: responsibleName || undefined,
-        list_id: selectedListId !== card.board_list_id && selectedListId !== null ? selectedListId : undefined
+        dueDate,
+        responsibleUserId,
+        progressPercentage,
+        selectedListId
       });
+      console.log('CardModal - Original data:', originalData);
+      console.log('CardModal - Final payload:', payload);
+      
+      await onUpdateCard(card.id, payload);
       
       // Actualizar datos originales después de guardar exitosamente
       setOriginalData({
@@ -159,9 +269,15 @@ export const CardModal: React.FC<CardModalProps> = ({
         description,
         dueDate,
         assignedTo,
-        responsible: responsibleName,
-        selectedListId
+        responsibleUserId,
+        selectedListId,
+        progressPercentage
       });
+
+      // Cerrar el modal automáticamente después de guardar exitosamente
+      setTimeout(() => {
+        onClose();
+      }, 800); // Delay más largo para ver el resultado
     } catch (error) {
       console.error('Error updating card:', error);
     } finally {
@@ -173,27 +289,21 @@ export const CardModal: React.FC<CardModalProps> = ({
   const hasUnsavedChanges = useCallback(() => {
     if (!originalData) return false;
     
-    // Obtener el ID del responsable original
-    const originalResponsibleUser = availableUsers.find(user => user.name === originalData.responsible);
-    const originalResponsibleUserId = originalResponsibleUser?.id || null;
-    
     return (
       title !== originalData.title ||
       description !== originalData.description ||
       dueDate !== originalData.dueDate ||
       assignedTo !== originalData.assignedTo ||
-      responsibleUserId !== originalResponsibleUserId ||
-      selectedListId !== originalData.selectedListId
+      responsibleUserId !== originalData.responsibleUserId ||
+      selectedListId !== originalData.selectedListId ||
+      progressPercentage !== originalData.progressPercentage
     );
-  }, [title, description, dueDate, assignedTo, responsibleUserId, selectedListId, originalData, availableUsers]);
+  }, [title, description, dueDate, assignedTo, responsibleUserId, selectedListId, progressPercentage, originalData]);
 
   // Función para manejar el cambio de responsable
   const handleResponsibleChange = (userId: string) => {
     const selectedUserId = userId ? parseInt(userId) : null;
     setResponsibleUserId(selectedUserId);
-    
-    const selectedUser = availableUsers.find(user => user.id === selectedUserId);
-    setResponsible(selectedUser?.name || '');
   };
 
   // Función para manejar el intento de cierre
@@ -234,7 +344,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     try {
       await commentService.createComment(card.id, { content: newComment });
       setNewComment('');
-      fetchComments();
+      fetchComments(card.id);
     } catch (error) {
       console.error('Error adding comment:', error);
     }
@@ -310,6 +420,43 @@ export const CardModal: React.FC<CardModalProps> = ({
               )}
             </div>
 
+            {/* Progress */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Progreso de la tarea
+              </label>
+              <div className="flex items-center space-x-4">
+                <div className="flex-1">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={progressPercentage}
+                    onChange={(e) => setProgressPercentage(parseInt(e.target.value))}
+                    disabled={!canEdit}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={progressPercentage}
+                    onChange={(e) => setProgressPercentage(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                    disabled={!canEdit}
+                    className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-kodigo-primary focus:border-kodigo-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                  <span className="text-sm text-gray-500">%</span>
+                </div>
+              </div>
+              {!canEdit && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Solo los administradores y editores pueden cambiar el progreso
+                </p>
+              )}
+            </div>
+
             {/* Comments */}
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
@@ -334,7 +481,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                     <div key={comment.id} className="bg-gray-50 rounded-md p-2 border-l-2 border-kodigo-primary/20">
                       <div className="flex items-center space-x-2 mb-1">
                         <div className="w-5 h-5 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center shrink-0">
-                          <User size={10} className="text-white" />
+                          <UserIcon size={10} className="text-white" />
                         </div>
                         <span className="text-xs font-medium text-gray-700">
                           {comment.user?.name || 'Usuario'}
@@ -402,10 +549,10 @@ export const CardModal: React.FC<CardModalProps> = ({
               </label>
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center shrink-0">
-                  <User size={12} className="text-white" />
+                  <UserIcon size={12} className="text-white" />
                 </div>
                 <span className="text-sm text-gray-700">
-                  {card?.user?.name || assignedTo || 'Usuario'}
+                  {cardCreator?.name || assignedTo || 'Usuario'}
                 </span>
               </div>
             </div>
@@ -422,7 +569,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="">Seleccionar responsable</option>
-                {availableUsers.map(user => (
+                {boardUsers.map(user => (
                   <option key={user.id} value={user.id}>
                     {user.name} ({user.email})
                   </option>
@@ -486,11 +633,11 @@ export const CardModal: React.FC<CardModalProps> = ({
               </label>
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center shrink-0">
-                  <User size={12} className="text-white" />
+                  <UserIcon size={12} className="text-white" />
                 </div>
                 <div>
                   <div className="text-xs font-medium text-gray-900">
-                    {card.user?.name || 'Usuario'}
+                    {cardCreator?.name || 'Usuario'}
                   </div>
                   <div className="text-xs text-gray-500">
                     {card.created_at && format(new Date(card.created_at), 'dd/MM/yyyy')}

@@ -15,8 +15,9 @@ export interface UpdateCardRequest {
   list_id?: number;
   position?: number;
   due_date?: string;
-  assigned_to?: string;
-  responsible?: string;
-  estimated_days?: number;
+  assigned_user_id?: number;
+  progress_percentage?: number;
+  label_ids?: number[];
   is_completed?: boolean;
+  // Explícitamente NO incluir user_id - ese es el creador y no se puede cambiar
 }
