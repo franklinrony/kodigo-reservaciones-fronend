@@ -205,7 +205,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                   snapshot.isDraggingOver ? 'bg-kodigo-light/30 rounded-md' : ''
                 }`}
               >
-                {list.cards?.map((card, cardIndex) => (
+                {list.cards?.sort((a, b) => a.position - b.position).map((card, cardIndex) => (
                   <KanbanCard
                     key={card.id}
                     card={card}

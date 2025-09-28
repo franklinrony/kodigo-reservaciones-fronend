@@ -30,17 +30,19 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
 
   // Actualizar estado optimista cuando cambia el board
   React.useEffect(() => {
-    const currentCards: ExtendedCard[] = board.lists?.flatMap(list => 
-      list.cards?.map(card => ({ ...card, listName: list.name, listId: list.id })) || []
-    ) || [];
+    const sortedLists = board.lists?.sort((a, b) => a.position - b.position) || [];
+    const currentCards: ExtendedCard[] = sortedLists.flatMap(list => 
+      (list.cards?.sort((a, b) => a.position - b.position).map(card => ({ ...card, listName: list.name, listId: list.id })) || [])
+    );
     setOptimisticCards(currentCards);
   }, [board]);
 
   // Helper function para revertir cambios optimistas
   const revertOptimisticChanges = () => {
-    const currentCards: ExtendedCard[] = board.lists?.flatMap(list => 
-      list.cards?.map(card => ({ ...card, listName: list.name, listId: list.id })) || []
-    ) || [];
+    const sortedLists = board.lists?.sort((a, b) => a.position - b.position) || [];
+    const currentCards: ExtendedCard[] = sortedLists.flatMap(list => 
+      (list.cards?.sort((a, b) => a.position - b.position).map(card => ({ ...card, listName: list.name, listId: list.id })) || [])
+    );
     setOptimisticCards(currentCards);
   };
 
@@ -52,7 +54,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
     
     // Actualizar posiciones
     newCards.forEach((card, index) => {
-      card.position = index;
+      card.position = index + 1;
     });
     
     return newCards;
@@ -142,7 +144,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
       startSync(`reorder-card-${cardId}`);
       
       await cardService.updateCard(cardId, {
-        position: destIndex
+        position: destIndex + 1
       });
       
       // 3. Si es exitoso, mostrar notificación sutil

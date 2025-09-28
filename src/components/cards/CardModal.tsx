@@ -97,6 +97,7 @@ export const CardModal: React.FC<CardModalProps> = ({
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Estados para manejo de cambios no guardados
   const [originalData, setOriginalData] = useState<{
@@ -137,8 +138,12 @@ export const CardModal: React.FC<CardModalProps> = ({
       setOriginalData(null);
       setComments([]);
       setCardCreator(null);
+      setIsLoading(false);
       return;
     }
+
+    // Iniciar carga
+    setIsLoading(true);
 
     console.log('CardModal - Card data:', card);
     console.log('CardModal - card.user_id:', card.user_id);
@@ -163,7 +168,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     setProgressPercentage(initialProgress);
     setOriginalData(cardData);
 
-    // Cargar comentarios y datos del usuario creador
+    // Cargar datos asíncronos
     fetchComments(card.id);
     if (card.user_id) {
       fetchCardCreator(card.user_id);
@@ -175,14 +180,30 @@ export const CardModal: React.FC<CardModalProps> = ({
     } else {
       setAssignedByUser(null);
     }
-  }, [card, fetchComments, fetchCardCreator, fetchAssignedByUser]);
 
-  // Efecto para cargar usuarios del tablero cuando se abre el modal
-  useEffect(() => {
-    if (isOpen && boardId) {
+    // Cargar usuarios del tablero
+    if (boardId) {
       fetchBoardUsers();
     }
-  }, [isOpen, boardId, fetchBoardUsers]);
+  }, [card, boardId, fetchComments, fetchCardCreator, fetchAssignedByUser, fetchBoardUsers]);
+
+  // Efecto para controlar el estado de carga general
+  useEffect(() => {
+    if (!card) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Verificar si todos los datos necesarios están cargados
+    const commentsLoaded = !commentsLoading;
+    const creatorLoaded = !card.user_id || cardCreator !== null;
+    const boardUsersLoaded = boardUsers.length > 0;
+
+    // Si todos los datos están cargados, terminar la carga
+    if (commentsLoaded && creatorLoaded && boardUsersLoaded) {
+      setIsLoading(false);
+    }
+  }, [card, commentsLoading, cardCreator, boardUsers]);
 
   // Efecto para establecer el responsable cuando se cargan los usuarios del tablero
   useEffect(() => {
@@ -390,42 +411,50 @@ export const CardModal: React.FC<CardModalProps> = ({
         size="xl" 
         title="Detalles de la Tarjeta"
       >
-        <div className="space-y-4">
-          {/* Información de permisos */}
-          {!canEdit && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-800">
-                <strong>Modo solo lectura:</strong> Tienes rol de "{userRole}" en este tablero. 
-                Solo puedes ver el contenido, no editarlo.
-              </p>
-            </div>
-          )}
-
-          {/* Card Header */}
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={!canEdit}
-                className="text-lg font-semibold border-0 px-0 focus:ring-0 w-full disabled:bg-gray-50 disabled:cursor-not-allowed"
-                placeholder="Título de la tarjeta"
-              />
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {hasUnsavedChanges() && (
-                <span className="text-xs text-amber-600 font-medium">
-                  • Cambios sin guardar
-                </span>
-              )}
-              {canEdit && (
-                <Button onClick={handleSave} loading={loading} size="sm">
-                  <Save size={16} className="mr-1" />
-                  Guardar
-                </Button>
-              )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-kodigo-primary"></div>
+              <span className="text-gray-600">Cargando detalles de la tarjeta...</span>
             </div>
           </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Información de permisos */}
+            {!canEdit && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  <strong>Modo solo lectura:</strong> Tienes rol de "{userRole}" en este tablero. 
+                  Solo puedes ver el contenido, no editarlo.
+                </p>
+              </div>
+            )}
+
+            {/* Card Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  disabled={!canEdit}
+                  className="text-lg font-semibold border-0 px-0 focus:ring-0 w-full disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  placeholder="Título de la tarjeta"
+                />
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {hasUnsavedChanges() && (
+                  <span className="text-xs text-amber-600 font-medium">
+                    • Cambios sin guardar
+                  </span>
+                )}
+                {canEdit && (
+                  <Button onClick={handleSave} loading={loading} size="sm">
+                    <Save size={16} className="mr-1" />
+                    Guardar
+                  </Button>
+                )}
+              </div>
+            </div>
 
         {/* Card Details */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
@@ -677,10 +706,11 @@ export const CardModal: React.FC<CardModalProps> = ({
                 </div>
               </div>
             </div>
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
+        )}
+      </Modal>
 
     {/* Modal de advertencia para cambios no guardados */}
     <Modal 

@@ -60,7 +60,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     const updatedCard = {
       ...cardToMove,
       list_id: destListId,
-      position: destIndex
+      position: destIndex + 1
     };
 
     // Insertar la tarjeta en la lista destino
@@ -69,11 +69,11 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
     // Actualizar posiciones de las tarjetas afectadas
     sourceList.cards?.forEach((card, index) => {
-      card.position = index;
+      card.position = index + 1;
     });
 
     destList.cards.forEach((card, index) => {
-      card.position = index;
+      card.position = index + 1;
     });
 
     return newBoard;
@@ -201,7 +201,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
         startSync(`move-card-${cardId}`);
         await cardService.updateCard(cardId, {
           list_id: destListId,
-          position: destination.index
+          position: destination.index + 1
         });
         
         // 3. Si es exitoso, mostrar notificación sutil y actualizar datos reales
