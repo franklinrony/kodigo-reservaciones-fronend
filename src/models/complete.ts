@@ -44,7 +44,7 @@ export interface Card {
   is_completed: boolean;
   is_archived: boolean;
   progress_percentage?: number; // Porcentaje de progreso (0-100)
-  priority?: 'alta' | 'media' | 'baja'; // Prioridad derivada del label principal
+  priority?: 'baja' | 'media' | 'alta' | 'extremo'; // Prioridad derivada del label principal
   assigned_to?: string; // Usuario asignado (nombre)
   responsible?: string; // Responsable
   estimated_days?: number; // Días estimados

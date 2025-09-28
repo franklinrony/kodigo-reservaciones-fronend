@@ -67,7 +67,7 @@ export const CardModal: React.FC<CardModalProps> = ({
   const [responsibleUserId, setResponsibleUserId] = useState<number | null>(null); // ID del usuario responsable
   const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [progressPercentage, setProgressPercentage] = useState(0); // Progreso de la tarea (0-100)
-  const [priority, setPriority] = useState<'alta' | 'media' | 'baja'>('media'); // Prioridad de la tarea
+  const [priority, setPriority] = useState<'baja' | 'media' | 'alta' | 'extremo'>('media'); // Prioridad de la tarea
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,7 +83,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     responsibleUserId: number | null;
     selectedListId: number | null;
     progressPercentage: number;
-    priority: 'alta' | 'media' | 'baja';
+    priority: 'baja' | 'media' | 'alta' | 'extremo';
   } | null>(null);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
 
@@ -655,7 +655,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                 <select
                   value={priority}
                   onChange={(e) => {
-                    const newPriority = e.target.value as 'alta' | 'media' | 'baja';
+                    const newPriority = e.target.value as 'baja' | 'media' | 'alta' | 'extremo';
                     setPriority(newPriority);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-kodigo-primary focus:border-transparent"
@@ -663,15 +663,18 @@ export const CardModal: React.FC<CardModalProps> = ({
                   <option value="baja">Baja</option>
                   <option value="media">Media</option>
                   <option value="alta">Alta</option>
+                  <option value="extremo">Extremo</option>
                 </select>
               ) : (
                 <div className="flex items-center space-x-2">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    priority === 'extremo' ? 'bg-purple-100 text-purple-800' :
                     priority === 'alta' ? 'bg-red-100 text-red-800' :
                     priority === 'media' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-green-100 text-green-800'
                   }`}>
-                    {priority === 'alta' ? 'Alta' :
+                    {priority === 'extremo' ? 'Extremo' :
+                     priority === 'alta' ? 'Alta' :
                      priority === 'media' ? 'Media' : 'Baja'}
                   </span>
                 </div>
