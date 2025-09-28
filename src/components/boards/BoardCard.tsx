@@ -42,15 +42,16 @@ export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
   // Función para obtener el icono de propiedad/compartido
   const getOwnershipIcon = () => {
     const isOwner = userRole === 'owner';
-    const hasCollaborators = boardUsers && boardUsers.length > 1;
+    // Un tablero es compartido si hay otros usuarios además del owner actual
+    const hasOtherUsers = boardUsers && boardUsers.length > 1;
 
-    if (isOwner && !hasCollaborators) {
+    if (isOwner && !hasOtherUsers) {
       return (
         <div title="Propietario" className="p-1 bg-green-100 rounded-full">
           <User className="w-3 h-3 text-green-600" />
         </div>
       );
-    } else if (hasCollaborators) {
+    } else if (hasOtherUsers || (!isOwner && boardUsers && boardUsers.length > 0)) {
       return (
         <div title="Compartido" className="p-1 bg-purple-100 rounded-full">
           <Users className="w-3 h-3 text-purple-600" />
