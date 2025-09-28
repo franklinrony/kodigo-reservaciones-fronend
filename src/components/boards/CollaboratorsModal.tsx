@@ -7,18 +7,20 @@ import { User as UserType } from '@/models';
 import { userService } from '@/services/userService';
 import { boardService } from '@/services/boardService';
 import { useNotification } from '@/hooks/useNotification';
+import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 
 interface CollaboratorsModalProps {
   isOpen: boolean;
   onClose: () => void;
   boardId: number;
   boardName: string;
+  boardOwnerId: number;
   currentUserId: number;
   onCollaboratorsUpdate: () => void;
 }
 
 interface UserWithRole extends UserType {
-  role?: 'viewer' | 'editor' | 'admin';
+  role?: 'viewer' | 'editor' | 'admin' | 'owner';
   isCollaborator?: boolean;
 }
 
@@ -27,15 +29,18 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
   onClose,
   boardId,
   boardName,
+  boardOwnerId,
   currentUserId,
   onCollaboratorsUpdate
 }) => {
   const { showNotification } = useNotification();
+  const { canManageCollaborators } = useBoardPermissions(boardId);
 
   // Estados
   const [searchTerm, setSearchTerm] = useState('');
   const [allUsers, setAllUsers] = useState<UserWithRole[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [selectedRole, setSelectedRole] = useState<'viewer' | 'editor' | 'admin'>('editor');
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [addingUsers, setAddingUsers] = useState(false);
 
@@ -52,10 +57,12 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
       // Marcar cuáles usuarios ya son colaboradores
       const usersWithRoles: UserWithRole[] = usersResponse.map(user => {
         const isCollaborator = collaboratorsResponse.some(col => col.id === user.id);
+        const isOwner = user.id === boardOwnerId;
+        
         return {
           ...user,
-          role: isCollaborator ? 'editor' : undefined, // Asumir editor por defecto
-          isCollaborator: isCollaborator
+          role: isOwner ? 'owner' : (isCollaborator ? 'editor' : undefined),
+          isCollaborator: isCollaborator || isOwner
         };
       });
 
@@ -66,7 +73,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
     } finally {
       setLoadingUsers(false);
     }
-  }, [boardId, showNotification]);
+  }, [boardId, boardOwnerId, showNotification]);
 
   useEffect(() => {
     if (isOpen) {
@@ -107,7 +114,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
     setAddingUsers(true);
     try {
       const promises = selectedUsers.map(userId =>
-        boardService.addCollaborator(boardId.toString(), userId.toString(), 'editor')
+        boardService.addCollaborator(boardId.toString(), userId.toString(), selectedRole)
       );
 
       await Promise.all(promises);
@@ -183,6 +190,8 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
   // Obtener color del rol
   const getRoleColor = (role: string) => {
     switch (role) {
+      case 'owner':
+        return 'bg-purple-100 text-purple-800';
       case 'admin':
         return 'bg-yellow-100 text-yellow-800';
       case 'editor':
@@ -214,8 +223,9 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
           />
         </div>
 
-        {/* Sección de agregar colaboradores */}
-        <div className="border rounded-lg p-4 bg-gray-50">
+        {/* Sección de agregar colaboradores - Solo visible para administradores */}
+        {canManageCollaborators && (
+          <div className="border rounded-lg p-4 bg-gray-50">
           <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
             <Plus size={20} className="mr-2 text-kodigo-primary" />
             Agregar Colaboradores
@@ -269,9 +279,23 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
               {/* Botón agregar */}
               {selectedUsers.length > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">
-                    {selectedUsers.length} usuario(s) seleccionado(s)
-                  </span>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-600">
+                      {selectedUsers.length} usuario(s) seleccionado(s)
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm text-gray-600">Rol:</label>
+                      <select
+                        value={selectedRole}
+                        onChange={(e) => setSelectedRole(e.target.value as 'viewer' | 'editor' | 'admin')}
+                        className="px-2 py-1 text-sm border border-gray-300 rounded"
+                      >
+                        <option value="viewer">👁️ Viewer</option>
+                        <option value="editor">✏️ Editor</option>
+                        <option value="admin">👑 Admin</option>
+                      </select>
+                    </div>
+                  </div>
                   <Button
                     onClick={addSelectedCollaborators}
                     loading={addingUsers}
@@ -279,13 +303,14 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
                     className="bg-kodigo-primary hover:bg-kodigo-dark"
                   >
                     <Plus size={16} className="mr-1" />
-                    Agregar como Editor
+                    Agregar como {selectedRole === 'viewer' ? 'Viewer' : selectedRole === 'editor' ? 'Editor' : 'Admin'}
                   </Button>
                 </div>
               )}
             </>
           )}
         </div>
+        )}
 
         {/* Sección de colaboradores existentes */}
         <div className="border rounded-lg p-4">
@@ -325,16 +350,22 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
                       <select
                         value={user.role || 'editor'}
                         onChange={(e) => changeCollaboratorRole(user.id, e.target.value as 'viewer' | 'editor' | 'admin')}
-                        disabled={user.id === currentUserId}
+                        disabled={!canManageCollaborators || user.id === currentUserId || user.role === 'owner'}
                         className={`px-3 py-1 text-sm rounded-full border-0 flex items-center space-x-1 ${getRoleColor(user.role || 'editor')} disabled:opacity-50`}
                       >
-                        <option value="viewer">👁️ Viewer</option>
-                        <option value="editor">✏️ Editor</option>
-                        <option value="admin">👑 Admin</option>
+                        {user.role === 'owner' ? (
+                          <option value="owner">👑 Owner</option>
+                        ) : (
+                          <>
+                            <option value="viewer">👁️ Viewer</option>
+                            <option value="editor">✏️ Editor</option>
+                            <option value="admin">👑 Admin</option>
+                          </>
+                        )}
                       </select>
 
-                      {/* Botón remover (solo si no es el usuario actual) */}
-                      {user.id !== currentUserId && (
+                      {/* Botón remover (solo si no es el usuario actual ni el owner y el usuario actual puede gestionar colaboradores) */}
+                      {canManageCollaborators && user.id !== currentUserId && user.role !== 'owner' && (
                         <button
                           onClick={() => removeCollaborator(user.id)}
                           className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"

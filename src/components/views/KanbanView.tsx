@@ -8,6 +8,7 @@ import { listService } from '@/services/listService';
 import { cardService } from '@/services/cardService';
 import { useNotification } from '@/hooks/useNotification';
 import { useSyncContext } from '@/contexts/SyncContext';
+import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 
 interface KanbanViewProps {
   board: Board;
@@ -25,6 +26,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const [loading, setLoading] = useState(false);
   const { showNotification } = useNotification();
   const { startSync, endSync } = useSyncContext();
+  const { canEdit } = useBoardPermissions(board.id);
 
   // Estado local para optimistic updates
   const [optimisticBoard, setOptimisticBoard] = useState<Board>(board);
@@ -173,6 +175,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   const handleDragEnd = async (result: DropResult) => {
+    // Si el usuario no puede editar, no permitir drag & drop
+    if (!canEdit) return;
+
     const { destination, source, draggableId, type } = result;
 
     if (!destination) return;
@@ -242,6 +247,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   key={list.id}
                   list={list}
                   index={index}
+                  boardId={board.id}
                   onCardClick={onCardClick}
                   onCreateCard={handleCreateCard}
                   onUpdateList={handleUpdateList}
@@ -252,48 +258,50 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               ))}
               {provided.placeholder}
 
-              {/* Add List Button */}
-              <div className="w-80 flex-shrink-0">
-                {isAddingList ? (
-                  <div className="bg-white rounded-lg p-4 shadow-md border">
-                    <input
-                      type="text"
-                      value={newListName}
-                      onChange={(e) => setNewListName(e.target.value)}
-                      placeholder="Ingresa el nombre de la lista..."
-                      className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-kodigo-primary focus:border-kodigo-primary"
-                      autoFocus
-                    />
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={handleCreateList}
-                        loading={loading}
-                        variant="gradient"
-                      >
-                        Agregar lista
-                      </Button>
-                      <button
-                        onClick={() => {
-                          setIsAddingList(false);
-                          setNewListName('');
-                        }}
-                        className="text-gray-500 hover:text-kodigo-primary transition-colors duration-200"
-                      >
-                        ✕
-                      </button>
+              {/* Add List Button - Only visible for users who can edit */}
+              {canEdit && (
+                <div className="w-80 flex-shrink-0">
+                  {isAddingList ? (
+                    <div className="bg-white rounded-lg p-4 shadow-md border">
+                      <input
+                        type="text"
+                        value={newListName}
+                        onChange={(e) => setNewListName(e.target.value)}
+                        placeholder="Ingresa el nombre de la lista..."
+                        className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-kodigo-primary focus:border-kodigo-primary"
+                        autoFocus
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          onClick={handleCreateList}
+                          loading={loading}
+                          variant="gradient"
+                        >
+                          Agregar lista
+                        </Button>
+                        <button
+                          onClick={() => {
+                            setIsAddingList(false);
+                            setNewListName('');
+                          }}
+                          className="text-gray-500 hover:text-kodigo-primary transition-colors duration-200"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsAddingList(true)}
-                    className="w-full bg-white hover:bg-kodigo-light/30 border-2 border-dashed border-kodigo-primary/30 hover:border-kodigo-primary rounded-lg p-4 flex items-center justify-center space-x-2 text-kodigo-primary hover:text-kodigo-dark transition-all duration-200 shadow-sm hover:shadow-md"
-                  >
-                    <Plus size={20} />
-                    <span>Agregar otra lista</span>
-                  </button>
-                )}
-              </div>
+                  ) : (
+                    <button
+                      onClick={() => setIsAddingList(true)}
+                      className="w-full bg-white hover:bg-kodigo-light/30 border-2 border-dashed border-kodigo-primary/30 hover:border-kodigo-primary rounded-lg p-4 flex items-center justify-center space-x-2 text-kodigo-primary hover:text-kodigo-dark transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <Plus size={20} />
+                      <span>Agregar otra lista</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </Droppable>

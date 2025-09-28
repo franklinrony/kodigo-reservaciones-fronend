@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { commentService } from '@/services/commentService';
 import { userService } from '@/services/userService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 
 interface CardModalProps {
   card: Card | null;
@@ -29,27 +30,14 @@ export const CardModal: React.FC<CardModalProps> = ({
   boardOwnerId
 }) => {
   const { user: currentUser } = useAuth();
+  const { canEdit, boardUsers } = useBoardPermissions(boardId);
 
   // Estados para los datos de usuarios
   const [cardCreator, setCardCreator] = useState<User | null>(null);
   const [assignedByUser, setAssignedByUser] = useState<User | null>(null);
-  const [boardUsers, setBoardUsers] = useState<User[]>([]);
 
-  // Calcular permisos del usuario actual (simplificado)
-  const getCurrentUserRole = useCallback(() => {
-    if (!currentUser || !boardOwnerId) return 'viewer';
-    
-    // Si es el propietario del board
-    if (currentUser.id === boardOwnerId) {
-      return 'admin';
-    }
-    
-    // Por ahora asumimos editor para usuarios autenticados
-    return 'editor';
-  }, [currentUser, boardOwnerId]);
-
-  const userRole = getCurrentUserRole();
-  const canEdit = userRole === 'admin' || userRole === 'editor';
+  // Calcular permisos del usuario actual usando el hook
+  const userCanEdit = canEdit;
 
   // Función para cargar la información del creador de la tarjeta
   const fetchCardCreator = useCallback(async (userId: number) => {
@@ -72,20 +60,6 @@ export const CardModal: React.FC<CardModalProps> = ({
       setAssignedByUser(null);
     }
   }, []);
-
-  // Función para cargar los usuarios del tablero
-  const fetchBoardUsers = useCallback(async () => {
-    if (!boardId) return;
-    
-    try {
-      const users = await userService.getBoardUsers(boardId);
-      setBoardUsers(users);
-      console.log('CardModal - Board users loaded:', users);
-    } catch (error) {
-      console.error('Error fetching board users:', error);
-      setBoardUsers([]);
-    }
-  }, [boardId]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(''); 
@@ -166,7 +140,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     setAssignedTo(cardData.assignedTo);
     setSelectedListId(cardData.selectedListId);
     setProgressPercentage(initialProgress);
-    setOriginalData(cardData);
+    // No establecer originalData aquí, se hará cuando se carguen los usuarios
 
     // Cargar datos asíncronos
     fetchComments(card.id);
@@ -180,12 +154,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     } else {
       setAssignedByUser(null);
     }
-
-    // Cargar usuarios del tablero
-    if (boardId) {
-      fetchBoardUsers();
-    }
-  }, [card, boardId, fetchComments, fetchCardCreator, fetchAssignedByUser, fetchBoardUsers]);
+  }, [card, boardId, fetchComments, fetchCardCreator, fetchAssignedByUser]);
 
   // Efecto para controlar el estado de carga general
   useEffect(() => {
@@ -238,18 +207,20 @@ export const CardModal: React.FC<CardModalProps> = ({
       // Solo actualizar si es diferente (inicialización)
       setResponsibleUserId(newResponsibleUserId);
       
-      // Actualizar también originalData para la primera carga
-      setOriginalData({
-        title: card.title || '',
-        description: card.description || '',
-        dueDate: card.due_date || '',
-        assignedTo: card.assigned_to || '',
-        responsibleUserId: newResponsibleUserId,
-        selectedListId: card.board_list_id,
-        progressPercentage: card.progress_percentage || 0
-      });
+      // Establecer originalData solo si no existe (primera carga)
+      if (!originalData) {
+        setOriginalData({
+          title: card.title || '',
+          description: card.description || '',
+          dueDate: card.due_date ? card.due_date.split('T')[0] : '',
+          assignedTo: card.assigned_to || '',
+          responsibleUserId: newResponsibleUserId,
+          selectedListId: card.board_list_id,
+          progressPercentage: card.progress_percentage || 0
+        });
+      }
     }
-  }, [card, boardUsers]); // Removido responsibleUserId de las dependencias
+  }, [card, boardUsers, originalData]);
 
   const handleSave = async () => {
     if (!card) return;
@@ -421,10 +392,10 @@ export const CardModal: React.FC<CardModalProps> = ({
         ) : (
           <div className="space-y-4">
             {/* Información de permisos */}
-            {!canEdit && (
+            {!userCanEdit && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800">
-                  <strong>Modo solo lectura:</strong> Tienes rol de "{userRole}" en este tablero. 
+                  <strong>Modo solo lectura:</strong> Tienes permisos limitados en este tablero.
                   Solo puedes ver el contenido, no editarlo.
                 </p>
               </div>
@@ -467,14 +438,14 @@ export const CardModal: React.FC<CardModalProps> = ({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                disabled={!canEdit}
+                disabled={!userCanEdit}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary sm:text-sm resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 rows={3}
-                placeholder={canEdit ? "Añade una descripción más detallada..." : "Sin descripción"}
+                placeholder={userCanEdit ? "Añade una descripción más detallada..." : "Sin descripción"}
               />
-              {!canEdit && (
+              {!userCanEdit && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Solo los administradores y editores pueden editar la descripción
+                  Solo los propietarios, administradores y editores pueden editar la descripción
                 </p>
               )}
             </div>
@@ -492,7 +463,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                     max="100"
                     value={progressPercentage}
                     onChange={(e) => setProgressPercentage(parseInt(e.target.value))}
-                    disabled={!canEdit}
+                    disabled={!userCanEdit}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed"
                   />
                 </div>
@@ -503,15 +474,15 @@ export const CardModal: React.FC<CardModalProps> = ({
                     max="100"
                     value={progressPercentage}
                     onChange={(e) => setProgressPercentage(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
-                    disabled={!canEdit}
+                    disabled={!userCanEdit}
                     className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-kodigo-primary focus:border-kodigo-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   <span className="text-sm text-gray-500">%</span>
                 </div>
               </div>
-              {!canEdit && (
+              {!userCanEdit && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Solo los administradores y editores pueden cambiar el progreso
+                  Solo los propietarios, administradores y editores pueden cambiar el progreso
                 </p>
               )}
             </div>
@@ -560,12 +531,12 @@ export const CardModal: React.FC<CardModalProps> = ({
                   type="text"
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  disabled={!canEdit}
-                  placeholder={canEdit ? "Escribe un comentario..." : "Solo editores pueden comentar"}
+                  disabled={!userCanEdit}
+                  placeholder={userCanEdit ? "Escribe un comentario..." : "Solo editores pueden comentar"}
                   className="flex-1 rounded-md border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  onKeyPress={(e) => e.key === 'Enter' && canEdit && handleAddComment()}
+                  onKeyPress={(e) => e.key === 'Enter' && userCanEdit && handleAddComment()}
                 />
-                {canEdit && (
+                {userCanEdit && (
                   <Button onClick={handleAddComment} size="sm" className="shrink-0">
                     Comentar
                   </Button>
@@ -584,7 +555,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                 <select
                   value={selectedListId || ''}
                   onChange={(e) => setSelectedListId(e.target.value ? parseInt(e.target.value) : null)}
-                  disabled={!canEdit}
+                  disabled={!userCanEdit}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   {boardLists.map(list => (
@@ -593,9 +564,9 @@ export const CardModal: React.FC<CardModalProps> = ({
                     </option>
                   ))}
                 </select>
-                {!canEdit && (
+                {!userCanEdit && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Solo los administradores y editores pueden mover tarjetas
+                    Solo los propietarios, administradores y editores pueden mover tarjetas
                   </p>
                 )}
               </div>
@@ -638,7 +609,7 @@ export const CardModal: React.FC<CardModalProps> = ({
               </select>
               {!canEdit && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Solo los administradores y editores pueden cambiar el responsable
+                  Solo los propietarios, administradores y editores pueden cambiar el responsable
                 </p>
               )}
             </div>
@@ -658,7 +629,7 @@ export const CardModal: React.FC<CardModalProps> = ({
               />
               {!canEdit && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Solo los administradores y editores pueden cambiar la fecha
+                  Solo los propietarios, administradores y editores pueden cambiar la fecha
                 </p>
               )}
             </div>

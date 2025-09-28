@@ -5,22 +5,26 @@ import { Button } from '@/components/ui/Button';
 import { CollaboratorsModal } from './CollaboratorsModal';
 import { Settings, Users, Eye, Table, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 
 interface BoardHeaderProps {
   board: Board;
   viewMode: 'kanban' | 'table';
   onViewModeChange: (mode: 'kanban' | 'table') => void;
   onCollaboratorsUpdate?: () => void;
+  boardOwnerId?: number;
 }
 
 export const BoardHeader: React.FC<BoardHeaderProps> = ({
   board,
   viewMode,
   onViewModeChange,
-  onCollaboratorsUpdate
+  onCollaboratorsUpdate,
+  boardOwnerId
 }) => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const { canManageCollaborators } = useBoardPermissions(board.id);
   const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
 
   const handleBackToBoards = () => {
@@ -79,15 +83,17 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           </div>
           
           {/* Board Actions */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-kodigo-secondary hover:text-kodigo-secondary/80 hover:bg-kodigo-secondary/10"
-            onClick={() => setIsCollaboratorsModalOpen(true)}
-          >
-            <Users size={16} className="mr-1" />
-            Colaboradores
-          </Button>
+          {canManageCollaborators && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-kodigo-secondary hover:text-kodigo-secondary/80 hover:bg-kodigo-secondary/10"
+              onClick={() => setIsCollaboratorsModalOpen(true)}
+            >
+              <Users size={16} className="mr-1" />
+              Colaboradores
+            </Button>
+          )}
           
           <Button variant="ghost" size="sm" className="text-kodigo-accent hover:text-kodigo-accent/80 hover:bg-kodigo-accent/10">
             <Settings size={16} className="mr-1" />
@@ -102,6 +108,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
         onClose={() => setIsCollaboratorsModalOpen(false)}
         boardId={board.id}
         boardName={board.name}
+        boardOwnerId={boardOwnerId || board.user_id}
         currentUserId={currentUser?.id || 0}
         onCollaboratorsUpdate={onCollaboratorsUpdate || (() => {})}
       />

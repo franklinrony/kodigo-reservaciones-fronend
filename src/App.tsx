@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { SyncProvider } from './contexts/SyncContext';
+import { BoardPermissionsProvider } from './contexts/BoardPermissionsContext';
 import { SyncIndicator } from './components/ui/SyncIndicator';
 import { Layout } from './components/layout/Layout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -18,53 +19,55 @@ function App() {
     <SyncProvider>
       <NotificationProvider>
         <AuthProvider>
-          <Router>
-            <SyncIndicator />
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<LoginForm />} />
-              <Route path="/register" element={<RegisterForm />} />
+          <BoardPermissionsProvider>
+            <Router>
+              <SyncIndicator />
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<LoginForm />} />
+                <Route path="/register" element={<RegisterForm />} />
+              
+              {/* Protected routes with layout */}
+              <Route
+                path="/"
+                element={
+                  <Layout>
+                    <HomePage />
+                  </Layout>
+                }
+              />
             
-            {/* Protected routes with layout */}
             <Route
-              path="/"
+              path="/boards"
               element={
                 <Layout>
-                  <HomePage />
+                  <ProtectedRoute>
+                    <BoardsPage />
+                  </ProtectedRoute>
                 </Layout>
               }
             />
-          
-          <Route
-            path="/boards"
-            element={
-              <Layout>
+            
+            <Route
+              path="/board/:id"
+              element={
                 <ProtectedRoute>
-                  <BoardsPage />
+                  <BoardPage />
                 </ProtectedRoute>
-              </Layout>
-            }
-          />
-          
-          <Route
-            path="/board/:id"
-            element={
-              <ProtectedRoute>
-                <BoardPage />
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* Temporary preview route */}
-          <Route
-            path="/preview"
-            element={<PreviewPage />}
-          />
-          
-          {/* Redirect unknown routes to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+              }
+            />
+            
+            {/* Temporary preview route */}
+            <Route
+              path="/preview"
+              element={<PreviewPage />}
+            />
+            
+            {/* Redirect unknown routes to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </BoardPermissionsProvider>
     </AuthProvider>
     </NotificationProvider>
     </SyncProvider>

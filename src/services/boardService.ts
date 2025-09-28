@@ -46,20 +46,20 @@ export const boardService = {
     await apiClient.delete(`/api/v1/boards/${id}`);
   },
 
-  async addCollaborator(boardId: string, userId: string, role: string = 'member'): Promise<BoardCollaborator> {
-    const response = await apiClient.post<any>(
+  async addCollaborator(boardId: string, userId: string, role: string = 'member'): Promise<void> {
+    await apiClient.post(
       `/api/v1/boards/${boardId}/collaborators`,
       { user_id: userId, role }
     );
-    return extractLaravelData<BoardCollaborator>(response, 'collaborator');
+    // Note: API saves data but doesn't return collaborator object in expected format
   },
 
-  async updateCollaborator(boardId: string, collaboratorId: string, role: string): Promise<BoardCollaborator> {
-    const response = await apiClient.put<any>(
+  async updateCollaborator(boardId: string, collaboratorId: string, role: string): Promise<void> {
+    await apiClient.put(
       `/api/v1/boards/${boardId}/collaborators/${collaboratorId}`,
       { role }
     );
-    return extractLaravelData<BoardCollaborator>(response, 'collaborator');
+    // Note: API updates data but doesn't return collaborator object in expected format
   },
 
   async removeCollaborator(boardId: number, userId: number): Promise<void> {

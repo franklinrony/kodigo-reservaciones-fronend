@@ -43,3 +43,8 @@ export interface LaravelCommentsResponse {
   message: string;
   comments: import('../complete').Comment[];
 }
+
+export interface LaravelCollaboratorsResponse {
+  message: string;
+  collaborators: import('../complete').BoardCollaborator[];
+}

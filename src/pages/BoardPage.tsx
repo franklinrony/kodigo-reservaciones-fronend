@@ -55,6 +55,7 @@ export const BoardPage: React.FC = () => {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onCollaboratorsUpdate={refetch}
+        boardOwnerId={board.user_id}
       />
       
       <div className="flex-1 overflow-hidden">

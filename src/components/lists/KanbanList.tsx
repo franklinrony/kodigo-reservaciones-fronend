@@ -5,10 +5,12 @@ import { Button } from '../ui/Button';
 import { Plus, MoreHorizontal, Trash2, Edit3 } from 'lucide-react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { useNotification } from '../../hooks/useNotification';
+import { useBoardPermissions } from '../../hooks/useBoardPermissions';
 
 interface KanbanListProps {
   list: BoardList;
   index: number;
+  boardId: number;
   onCardClick: (card: Card) => void;
   onCreateCard: (listId: number, cardData: CreateCardRequest) => Promise<void>;
   onUpdateList?: (listId: number, listData: { name: string }) => Promise<void>;
@@ -20,6 +22,7 @@ interface KanbanListProps {
 export const KanbanList: React.FC<KanbanListProps> = ({
   list,
   index,
+  boardId,
   onCardClick,
   onCreateCard,
   onUpdateList,
@@ -35,6 +38,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { showNotification } = useNotification();
+  const { canEdit, canDelete } = useBoardPermissions(boardId);
   
   const titleInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -149,9 +153,11 @@ export const KanbanList: React.FC<KanbanListProps> = ({
               />
             ) : (
               <h3 
-                className="font-medium text-kodigo-primary cursor-pointer hover:bg-kodigo-light/20 rounded px-2 py-1 -mx-2 -my-1 transition-colors"
-                onClick={() => setIsEditingTitle(true)}
-                title="Haz clic para editar"
+                className={`font-medium text-kodigo-primary rounded px-2 py-1 -mx-2 -my-1 transition-colors ${
+                  canEdit ? 'cursor-pointer hover:bg-kodigo-light/20' : ''
+                }`}
+                onClick={() => canEdit && setIsEditingTitle(true)}
+                title={canEdit ? "Haz clic para editar" : "No tienes permisos para editar"}
               >
                 {list.name}
               </h3>
@@ -161,35 +167,41 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                 {list.cards?.length || 0}
               </span>
               <div className="relative" ref={menuRef}>
-                <button 
-                  className="p-1 hover:bg-kodigo-light/20 rounded transition-colors duration-200"
-                  onClick={() => setShowMenu(!showMenu)}
-                >
-                  <MoreHorizontal size={16} className="text-kodigo-primary" />
-                </button>
+                {(canEdit || canDelete) && (
+                  <button 
+                    className="p-1 hover:bg-kodigo-light/20 rounded transition-colors duration-200"
+                    onClick={() => setShowMenu(!showMenu)}
+                  >
+                    <MoreHorizontal size={16} className="text-kodigo-primary" />
+                  </button>
+                )}
                 {showMenu && (
                   <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]">
-                    <button
-                      onClick={() => {
-                        setIsEditingTitle(true);
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-kodigo-light/20 flex items-center space-x-2 text-kodigo-primary"
-                    >
-                      <Edit3 size={14} />
-                      <span>Editar título</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleDeleteList();
-                        setShowMenu(false);
-                      }}
-                      disabled={isDeleting}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center space-x-2 disabled:opacity-50"
-                    >
-                      <Trash2 size={14} />
-                      <span>{isDeleting ? 'Eliminando...' : 'Eliminar lista'}</span>
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => {
+                          setIsEditingTitle(true);
+                          setShowMenu(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-kodigo-light/20 flex items-center space-x-2 text-kodigo-primary"
+                      >
+                        <Edit3 size={14} />
+                        <span>Editar título</span>
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => {
+                          handleDeleteList();
+                          setShowMenu(false);
+                        }}
+                        disabled={isDeleting}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center space-x-2 disabled:opacity-50"
+                      >
+                        <Trash2 size={14} />
+                        <span>{isDeleting ? 'Eliminando...' : 'Eliminar lista'}</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -247,7 +259,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                       </button>
                     </div>
                   </div>
-                ) : (
+                ) : canEdit ? (
                   <button
                     onClick={() => setIsAddingCard(true)}
                     className="flex items-center space-x-2 text-kodigo-primary hover:text-kodigo-dark w-full p-3 rounded-lg hover:bg-kodigo-light/20 transition-all duration-200"
@@ -255,7 +267,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                     <Plus size={16} />
                     <span className="text-sm">Agregar una tarjeta</span>
                   </button>
-                )}
+                ) : null}
               </div>
             )}
           </Droppable>

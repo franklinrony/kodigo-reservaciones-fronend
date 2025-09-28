@@ -6,6 +6,7 @@ import { cardService } from '../../services/cardService';
 import { useNotification } from '../../hooks/useNotification';
 import { useSyncContext } from '../../contexts/SyncContext';
 import { truncateText, getPriorityFromLabels, formatDueDate } from '@/utils/textUtils';
+import { useBoardPermissions } from '../../hooks/useBoardPermissions';
 
 interface TableViewProps {
   board: Board;
@@ -24,6 +25,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
   const [editValue, setEditValue] = useState('');
   const { showNotification } = useNotification();
   const { startSync, endSync } = useSyncContext();
+  const { canEdit } = useBoardPermissions(board.id);
 
   // Estado optimista para la tabla
   const [optimisticCards, setOptimisticCards] = useState<ExtendedCard[]>([]);
@@ -62,6 +64,9 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
 
   // Función para iniciar edición inline
   const startEditing = (card: Card, field: 'title' | 'description') => {
+    // Si el usuario no puede editar, no permitir edición inline
+    if (!canEdit) return;
+
     setEditingCard(card.id);
     setEditingField(field);
     setEditValue(field === 'title' ? card.title : card.description || '');
@@ -126,6 +131,9 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
 
   // Función para manejar drag & drop con actualizaciones optimistas
   const handleDragEnd = async (result: DropResult) => {
+    // Si el usuario no puede editar, no permitir drag & drop
+    if (!canEdit) return;
+
     if (!result.destination) return;
 
     const sourceIndex = result.source.index;
