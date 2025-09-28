@@ -16,6 +16,7 @@ export interface UpdateCardRequest {
   position?: number;
   due_date?: string;
   assigned_user_id?: number;
+  assigned_by?: number | null; // ID de quien asigna la tarjeta
   progress_percentage?: number;
   label_ids?: number[];
   is_completed?: boolean;

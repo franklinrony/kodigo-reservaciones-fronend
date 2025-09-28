@@ -37,6 +37,7 @@ export interface Card {
   board_list_id: number;
   user_id: number;
   assigned_user_id?: number; // ID del usuario asignado
+  assigned_by?: number; // ID de quien asignó la tarjeta
   position: number;
   due_date?: string;
   is_completed: boolean;

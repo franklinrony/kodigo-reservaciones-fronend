@@ -32,6 +32,7 @@ export const CardModal: React.FC<CardModalProps> = ({
 
   // Estados para los datos de usuarios
   const [cardCreator, setCardCreator] = useState<User | null>(null);
+  const [assignedByUser, setAssignedByUser] = useState<User | null>(null);
   const [boardUsers, setBoardUsers] = useState<User[]>([]);
 
   // Calcular permisos del usuario actual (simplificado)
@@ -58,6 +59,17 @@ export const CardModal: React.FC<CardModalProps> = ({
     } catch (error) {
       console.error('Error fetching card creator:', error);
       setCardCreator(null);
+    }
+  }, []);
+
+  // Función para cargar la información del usuario que asignó la tarjeta
+  const fetchAssignedByUser = useCallback(async (userId: number) => {
+    try {
+      const user = await userService.getUserById(userId);
+      setAssignedByUser(user);
+    } catch (error) {
+      console.error('Error fetching assigned by user:', error);
+      setAssignedByUser(null);
     }
   }, []);
 
@@ -156,7 +168,14 @@ export const CardModal: React.FC<CardModalProps> = ({
     if (card.user_id) {
       fetchCardCreator(card.user_id);
     }
-  }, [card, fetchComments, fetchCardCreator]);
+    
+    // Cargar información del usuario que asignó la tarjeta si existe
+    if (card.assigned_by) {
+      fetchAssignedByUser(card.assigned_by);
+    } else {
+      setAssignedByUser(null);
+    }
+  }, [card, fetchComments, fetchCardCreator, fetchAssignedByUser]);
 
   // Efecto para cargar usuarios del tablero cuando se abre el modal
   useEffect(() => {
@@ -234,6 +253,17 @@ export const CardModal: React.FC<CardModalProps> = ({
 
       if (responsibleUserId !== originalData?.responsibleUserId) {
         payload.assigned_user_id = responsibleUserId || undefined;
+        
+        // Si se está asignando un responsable (y hay usuario actual), 
+        // incluir assigned_by solo si no había responsable antes o si cambió
+        if (responsibleUserId && currentUser) {
+          // Solo asignar assigned_by si:
+          // 1. No había responsable antes (primera asignación), O
+          // 2. Se está cambiando el responsable
+          if (!originalData?.responsibleUserId || responsibleUserId !== originalData.responsibleUserId) {
+            payload.assigned_by = currentUser.id;
+          }
+        }
       }
 
       if (progressPercentage !== originalData?.progressPercentage) {
@@ -542,20 +572,22 @@ export const CardModal: React.FC<CardModalProps> = ({
               </div>
             )}
 
-            {/* Asignado por */}
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <label className="block text-xs font-medium text-gray-700 mb-2">
-                Asignado por
-              </label>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center shrink-0">
-                  <UserIcon size={12} className="text-white" />
+            {/* Asignado por - Solo mostrar si existe assigned_by */}
+            {card.assigned_by && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Asignado por
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center shrink-0">
+                    <UserIcon size={12} className="text-white" />
+                  </div>
+                  <span className="text-sm text-gray-700">
+                    {assignedByUser?.name || 'Cargando...'}
+                  </span>
                 </div>
-                <span className="text-sm text-gray-700">
-                  {cardCreator?.name || assignedTo || 'Usuario'}
-                </span>
               </div>
-            </div>
+            )}
 
             {/* Responsable */}
             <div className="bg-gray-50 p-3 rounded-lg">
