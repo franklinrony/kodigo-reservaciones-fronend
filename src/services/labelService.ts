@@ -6,6 +6,11 @@ import {
 } from '@/models';
 
 export const labelService = {
+  async getAllLabels(): Promise<Label[]> {
+    const response = await apiClient.get<LaravelLabelsResponse>('/api/v1/labels');
+    return extractLaravelData<Label[]>(response, 'labels');
+  },
+
   async getLabels(boardId: number): Promise<Label[]> {
     const response = await apiClient.get<LaravelLabelsResponse>(`/api/v1/boards/${boardId}/labels`);
     return extractLaravelData<Label[]>(response, 'labels');

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { commentService } from '@/services/commentService';
 import { userService } from '@/services/userService';
+import { labelService } from '@/services/labelService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 
@@ -17,8 +18,6 @@ interface CardModalProps {
   onUpdateCard: (cardId: number, cardData: UpdateCardRequest) => Promise<void>;
   boardLists?: Array<{ id: number; name: string }>;
   boardId: number; // ID del tablero para consultar usuarios
-  boardOwnerId?: number; // ID del propietario del tablero
-  boardLabels?: Array<{ id: number; name: string; priority?: string }>; // Etiquetas del tablero
 }
 
 export const CardModal: React.FC<CardModalProps> = ({
@@ -27,36 +26,53 @@ export const CardModal: React.FC<CardModalProps> = ({
   onClose,
   onUpdateCard,
   boardLists = [],
-  boardId,
-  boardOwnerId,
-  boardLabels = []
+  boardId
 }) => {
   const { user: currentUser } = useAuth();
   const { canEdit, boardUsers } = useBoardPermissions(boardId);
+
+  // Estado para las labels globales
+  const [globalLabels, setGlobalLabels] = useState<Array<{ id: number; name: string; color: string }>>([]);
 
   // Estados para los datos de usuarios
   const [cardCreator, setCardCreator] = useState<User | null>(null);
   const [assignedByUser, setAssignedByUser] = useState<User | null>(null);
 
-  // Función para convertir prioridad a label_id
-  const getLabelIdForPriority = useCallback((selectedPriority: 'baja' | 'media' | 'alta' | 'extremo'): number | undefined => {
-    // Buscar el label que corresponda a la prioridad por nombre
-    const priorityLabelMap = {
-      'baja': ['Bajo', 'baja'],
-      'media': ['Medio', 'media'], 
-      'alta': ['Alto', 'alta'],
-      'extremo': ['Extremo', 'extremo']
+  // Cargar labels globales al montar el componente
+  useEffect(() => {
+    const loadGlobalLabels = async () => {
+      try {
+        const labels = await labelService.getAllLabels();
+        setGlobalLabels(labels);
+      } catch (error) {
+        console.error('Error loading global labels:', error);
+      }
     };
+    loadGlobalLabels();
+  }, []);
 
-    const possibleNames = priorityLabelMap[selectedPriority];
-    const label = boardLabels.find(label => 
-      possibleNames.some(name => 
-        label.name.toLowerCase().includes(name.toLowerCase())
-      )
-    );
+  // Función para convertir label_id a prioridad
+  const getPriorityFromLabelId = useCallback((labelId: number): 'baja' | 'media' | 'alta' | 'extremo' => {
+    const label = globalLabels.find(l => l.id === labelId);
+    if (!label) return 'media';
 
-    return label?.id;
-  }, [boardLabels]);
+    const labelName = label.name.toLowerCase();
+    if (labelName.includes('bajo') || labelName.includes('baja')) return 'baja';
+    if (labelName.includes('medio') || labelName.includes('media')) return 'media';
+    if (labelName.includes('alto') || labelName.includes('alta')) return 'alta';
+    if (labelName.includes('extremo')) return 'extremo';
+    
+    return 'media'; // fallback
+  }, [globalLabels]);
+
+  // Función para obtener la prioridad actual de la tarjeta
+  const getCurrentCardPriority = useCallback((): 'baja' | 'media' | 'alta' | 'extremo' => {
+    if (!card?.label_ids || card.label_ids.length === 0) return 'media';
+    
+    // Tomar el primer label_id (asumiendo que solo hay uno para prioridad)
+    const labelId = card.label_ids[0];
+    return getPriorityFromLabelId(labelId);
+  }, [card, getPriorityFromLabelId]);
 
   // Calcular permisos del usuario actual usando el hook
   const userCanEdit = canEdit;
@@ -157,7 +173,7 @@ export const CardModal: React.FC<CardModalProps> = ({
       responsibleUserId: null, // Se establecerá cuando se carguen los usuarios
       selectedListId: card.board_list_id,
       progressPercentage: initialProgress,
-      priority: card.priority || 'media'
+      priority: getCurrentCardPriority()
     };
     
     setTitle(cardData.title);
@@ -181,7 +197,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     } else {
       setAssignedByUser(null);
     }
-  }, [card, boardId, fetchComments, fetchCardCreator, fetchAssignedByUser]);
+  }, [card, boardId, fetchComments, fetchCardCreator, fetchAssignedByUser, getCurrentCardPriority]);
 
   // Efecto para controlar el estado de carga general
   useEffect(() => {
