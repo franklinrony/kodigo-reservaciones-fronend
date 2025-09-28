@@ -4,13 +4,15 @@ import { Board } from '@/models';
 import { Calendar, Users, Lock, Globe, Eye, Edit3, Crown, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { useBoardPermissions } from '@/hooks/useBoardPermissions';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BoardCardProps {
   board: Board;
 }
 
 export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
-  const { userRole, boardUsers } = useBoardPermissions(board.id);
+  const { userRole } = useBoardPermissions(board.id);
+  const { user: currentUser } = useAuth();
 
   // Función para obtener el icono del rol
   const getRoleIcon = () => {
@@ -39,19 +41,20 @@ export const BoardCard: React.FC<BoardCardProps> = ({ board }) => {
     }
   };
 
-  // Función para obtener el icono de propiedad/compartido
+  // Función para obtener el icono de propiedad/compartido usando datos del board
   const getOwnershipIcon = () => {
-    const isOwner = userRole === 'owner';
-    // Un tablero es compartido si hay otros usuarios además del owner actual
-    const hasOtherUsers = boardUsers && boardUsers.length > 1;
+    if (!currentUser) return null;
 
-    if (isOwner && !hasOtherUsers) {
+    const isOwner = board.user_id === currentUser.id;
+    const hasCollaborators = (board.collaborators_count || 0) > 0;
+
+    if (isOwner && !hasCollaborators) {
       return (
         <div title="Propietario" className="p-1 bg-green-100 rounded-full">
           <User className="w-3 h-3 text-green-600" />
         </div>
       );
-    } else if (hasOtherUsers || (!isOwner && boardUsers && boardUsers.length > 0)) {
+    } else if (hasCollaborators || !isOwner) {
       return (
         <div title="Compartido" className="p-1 bg-purple-100 rounded-full">
           <Users className="w-3 h-3 text-purple-600" />

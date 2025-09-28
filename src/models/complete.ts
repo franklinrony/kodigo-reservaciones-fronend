@@ -93,4 +93,6 @@ export interface Board {
   lists?: BoardList[];
   labels?: Label[];
   collaborators?: BoardCollaborator[];
+  lists_count?: number; // Número de listas
+  collaborators_count?: number; // Número de colaboradores
 }
