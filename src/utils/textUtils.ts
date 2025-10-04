@@ -68,13 +68,36 @@ export const getPriorityFromLabels = (labels?: Array<{ name: string; color: stri
  * Formatea la fecha de vencimiento con el formato adecuado
  */
 export const formatDueDate = (dateString: string): string => {
-  const date = new Date(dateString);
+  if (!dateString) return '';
+
+  // Si la cadena tiene componente de tiempo ISO, usar solo la parte YYYY-MM-DD
+  // para evitar que la conversión a Date en zona horaria local desplace el día.
+  let year: number, month: number, day: number;
+  try {
+    const datePart = dateString.includes('T') ? dateString.split('T')[0] : dateString;
+    const parts = datePart.split('-').map(p => parseInt(p, 10));
+    if (parts.length >= 3 && parts.every(n => !Number.isNaN(n))) {
+      [year, month, day] = parts;
+    } else {
+      // Fallback a Date parsing si el formato no es YYYY-MM-DD
+      const parsed = new Date(dateString);
+      year = parsed.getFullYear();
+      month = parsed.getMonth() + 1;
+      day = parsed.getDate();
+    }
+  } catch {
+    // Si falla, devolver cadena vacía
+    return '';
+  }
+
+  // Construir una fecha sin horas (local) basada únicamente en la fecha (evita shift por timezone)
+  const date = new Date(year, month - 1, day);
   const now = new Date();
-  
+
   // Resetear las horas para una comparación precisa de días
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dueDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  
+
   const diffTime = dueDate.getTime() - today.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
