@@ -60,7 +60,8 @@ const NotificationContainer: React.FC = () => {
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3 max-w-md">
+    // Desktop: anchored to right with max width; Mobile: small right offset and horizontal padding
+    <div className="fixed top-4 right-2 sm:right-4 z-50 space-y-3 w-[calc(100%-24px)] sm:w-auto sm:max-w-md px-2 sm:px-0">
       {notifications.map((notification: Notification) => (
         <NotificationItem
           key={notification.id}
