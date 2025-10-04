@@ -144,7 +144,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     responsibleUserId: number | null;
     selectedListId: number | null;
     progressPercentage: number;
-    priority: 'baja' | 'media' | 'alta' | 'extremo';
+    priority: 'baja' | 'media' | 'alta' | 'extremo' | '';
   } | null>(null);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
 
@@ -205,7 +205,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     setAssignedTo(cardData.assignedTo);
     setSelectedListId(cardData.selectedListId);
     setProgressPercentage(initialProgress);
-    setPriority(cardData.priority);
+  setPriority(cardData.priority);
     // No establecer originalData aquí, se hará cuando se carguen los usuarios
 
     // Cargar datos asíncronos
@@ -334,10 +334,14 @@ export const CardModal: React.FC<CardModalProps> = ({
       }
 
       if (priority !== originalData?.priority) {
-        // Convertir la prioridad seleccionada al correspondiente label_id
-        const priorityLabelId = getLabelIdForPriority(priority);
-        if (priorityLabelId) {
-          payload.label_ids = [priorityLabelId];
+        // Si priority es vacío, quitar prioridad
+        if (!priority) {
+          payload.label_ids = [];
+        } else {
+          const priorityLabelId = getLabelIdForPriority(priority as 'baja' | 'media' | 'alta' | 'extremo');
+          if (priorityLabelId) {
+            payload.label_ids = [priorityLabelId];
+          }
         }
       }
 
@@ -719,6 +723,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-kodigo-primary focus:border-transparent"
                 >
+                  <option value="">-</option>
                   <option value="baja">Baja</option>
                   <option value="media">Media</option>
                   <option value="alta">Alta</option>

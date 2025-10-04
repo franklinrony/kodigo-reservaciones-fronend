@@ -29,6 +29,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
   const { startSync, endSync } = useSyncContext();
   const { canEdit } = useBoardPermissions(board.id);
   const [globalLabels, setGlobalLabels] = useState<Array<{ id: number; name: string; color: string }>>([]);
+  const [labelsLoading, setLabelsLoading] = useState(true);
   // notification already available as showNotification
   const { boardUsers } = useBoardPermissions(board.id);
 
@@ -57,8 +58,10 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
       try {
         const labels = await labelService.getAllLabels();
         if (mounted) setGlobalLabels(labels);
+        if (mounted) setLabelsLoading(false);
       } catch (error) {
         console.error('Error loading global labels for TableView:', error);
+        if (mounted) setLabelsLoading(false);
       }
     };
     load();
@@ -203,7 +206,15 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
 
   return (
     <div className="p-6">
-      <DragDropContext onDragEnd={handleDragEnd}>
+      {labelsLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-kodigo-primary"></div>
+            <span className="text-gray-600">Cargando prioridades...</span>
+          </div>
+        </div>
+      ) : (
+        <DragDropContext onDragEnd={handleDragEnd}>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -500,7 +511,8 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
             </div>
           )}
         </div>
-      </DragDropContext>
+        </DragDropContext>
+      )}
     </div>
   );
 };
