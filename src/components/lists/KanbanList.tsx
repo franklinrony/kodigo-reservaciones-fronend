@@ -222,6 +222,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                     key={card.id}
                     card={card}
                     index={cardIndex}
+                    boardId={boardId}
                     onClick={() => onCardClick(card)}
                     onUpdateCard={onUpdateCard}
                     onDeleteCard={onDeleteCard}

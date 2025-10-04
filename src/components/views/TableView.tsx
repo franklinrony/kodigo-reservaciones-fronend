@@ -26,6 +26,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
   const { showNotification } = useNotification();
   const { startSync, endSync } = useSyncContext();
   const { canEdit } = useBoardPermissions(board.id);
+  const { boardUsers } = useBoardPermissions(board.id);
 
   // Estado optimista para la tabla
   const [optimisticCards, setOptimisticCards] = useState<ExtendedCard[]>([]);
@@ -380,11 +381,14 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                   <span className="text-sm text-gray-900">{card.assigned_to}</span>
                                 </div>
                               )}
-                              {card.responsible && (
-                                <div className="text-xs text-gray-500">
-                                  <strong>Resp:</strong> {card.responsible}
-                                </div>
-                              )}
+                              {(() => {
+                                const responsibleName = card.responsible || boardUsers.find((u: { id: number; name: string }) => u.id === card.assigned_user_id)?.name;
+                                return responsibleName ? (
+                                  <div className="text-xs text-gray-500">
+                                    <strong>Resp:</strong> {responsibleName}
+                                  </div>
+                                ) : null;
+                              })()}
                               {!card.assigned_to && !card.responsible && (
                                 <span className="text-gray-400">-</span>
                               )}

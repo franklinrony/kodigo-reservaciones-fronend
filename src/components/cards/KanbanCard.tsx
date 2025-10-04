@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 import { Card as CardType } from '@/models';
 import { Calendar, MessageCircle, MoreHorizontal, Trash2, Edit2 } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
@@ -9,6 +10,7 @@ import { getPriorityFromLabels, formatDueDate } from '@/utils/textUtils';
 interface KanbanCardProps {
   card: CardType;
   index: number;
+  boardId?: number;
   onClick: () => void;
   onUpdateCard?: (cardId: number, cardData: { title?: string; description?: string }) => Promise<void>;
   onDeleteCard?: (cardId: number) => Promise<void>;
@@ -17,12 +19,16 @@ interface KanbanCardProps {
 export const KanbanCard: React.FC<KanbanCardProps> = ({ 
   card, 
   index, 
+  boardId,
   onClick, 
   onUpdateCard,
   onDeleteCard
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const { priority, color: priorityColor, text: priorityText } = getPriorityFromLabels(card.labels);
+  // Resolver nombre del responsable usando boardUsers si existe
+  const { boardUsers } = useBoardPermissions(boardId || 0);
+  const responsibleName = card.responsible || card.assigned_to || boardUsers.find((u: { id: number; name: string }) => u.id === card.assigned_user_id)?.name || '';
 
   const handleUpdateTitle = async (newTitle: string) => {
     if (onUpdateCard) {
@@ -212,9 +218,9 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                       <strong>Asignado:</strong> {card.assigned_to}
                     </div>
                   )}
-                  {card.responsible && (
+                  {responsibleName && (
                     <div className="text-gray-600">
-                      <strong>Responsable:</strong> {card.responsible}
+                      <strong>Responsable:</strong> {responsibleName}
                     </div>
                   )}
                 </div>
