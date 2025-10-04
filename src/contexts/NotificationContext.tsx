@@ -60,7 +60,8 @@ const NotificationContainer: React.FC = () => {
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3 max-w-md">
+    // Increased width and right offset so notifications are not cramped to the edge
+    <div className="fixed top-6 right-6 z-50 space-y-3 w-96">
       {notifications.map((notification: Notification) => (
         <NotificationItem
           key={notification.id}
@@ -119,7 +120,7 @@ const NotificationItem: React.FC<{
 
   return (
     <div 
-      className={`w-full ${styles.bg} ${styles.border} ${styles.shadow} rounded-r-lg backdrop-blur-sm animate-slide-in-right overflow-hidden transition-all duration-300 hover:scale-[1.02]`}
+      className={`w-full ${styles.bg} ${styles.border} ${styles.shadow} rounded-lg backdrop-blur-sm animate-slide-in-right overflow-hidden transition-all duration-300 hover:scale-[1.02]`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >

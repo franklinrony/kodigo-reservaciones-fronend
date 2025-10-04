@@ -90,6 +90,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     if (!newListName.trim()) return;
     
     setLoading(true);
+    startSync('create-list');
     try {
       await listService.createList(board.id, { name: newListName });
       setNewListName('');
@@ -104,22 +105,65 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
       console.error('Error creating list:', error);
       showNotification('error', error instanceof Error ? error.message : 'Error al crear la lista');
     } finally {
+      endSync('create-list');
       setLoading(false);
     }
   };
 
   const handleCreateCard = async (listId: number, cardData: CreateCardRequest) => {
+  // Optimistic create: insert a temporary card into optimisticBoard immediately
+    const tempId = Date.now() * -1; // negative temp id
+    const tempCard: Card = {
+      id: tempId,
+      title: cardData.title,
+      description: cardData.description || undefined,
+      board_list_id: listId,
+      user_id: 0,
+      position: 1,
+      is_completed: false,
+      is_archived: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      priority: undefined,
+    } as unknown as Card;
+
+    // Insert temp card at the end of the target list
+    setOptimisticBoard(prev => {
+      const next = { ...prev } as Board;
+      next.lists = next.lists?.map(l => ({ ...l, cards: [...(l.cards || [])] })) || [];
+      const target = next.lists.find(l => l.id === listId);
+      if (target) {
+        target.cards = target.cards || [];
+        tempCard.position = target.cards.length + 1;
+        target.cards.push(tempCard);
+      }
+      return next;
+    });
+
+    // Show syncing indicator while the create request is in flight
+    startSync(`create-card-${tempId}`);
     try {
       await cardService.createCard(listId, cardData);
+      // Replace optimistic state by refetching real board
       showNotification('success', 'Tarjeta creada correctamente');
-      
-      // Actualizar datos reales en background  
       setTimeout(() => {
         onBoardUpdate();
       }, 300);
     } catch (error) {
       console.error('Error creating card:', error);
+      // Remove temp card from optimisticBoard
+      setOptimisticBoard(prev => {
+        const next = { ...prev } as Board;
+        next.lists = next.lists?.map(l => ({ ...l, cards: [...(l.cards || [])] })) || [];
+        const target = next.lists.find(l => l.id === listId);
+        if (target) {
+          target.cards = target.cards?.filter(c => c.id !== tempId) || [];
+        }
+        return next;
+      });
       showNotification('error', error instanceof Error ? error.message : 'Error al crear la tarjeta');
+    } finally {
+      endSync(`create-card-${tempId}`);
     }
   };
 
@@ -148,6 +192,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   const handleUpdateCard = async (cardId: number, cardData: { title?: string; description?: string }) => {
+    startSync(`update-card-${cardId}`);
     try {
       await cardService.updateCard(cardId, cardData);
       onBoardUpdate();
@@ -159,10 +204,13 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
       // Recargar el tablero para obtener el estado más reciente
       onBoardUpdate();
       throw error;
+    } finally {
+      endSync(`update-card-${cardId}`);
     }
   };
 
   const handleDeleteCard = async (cardId: number) => {
+    startSync(`delete-card-${cardId}`);
     try {
       await cardService.deleteCard(cardId);
       onBoardUpdate();
@@ -171,6 +219,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
       console.error('Error deleting card:', error);
       showNotification('error', error instanceof Error ? error.message : 'Error al eliminar la tarjeta');
       throw error;
+    } finally {
+      endSync(`delete-card-${cardId}`);
     }
   };
 

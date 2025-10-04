@@ -402,6 +402,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                     return { ...c, labels: [label], label_ids: [newLabelId] } as ExtendedCard;
                                   }));
                                   try {
+                                    startSync(`update-priority-${card.id}`);
                                     await cardService.updateCard(card.id, { label_ids: newLabelId ? [newLabelId] : [] });
                                     onBoardUpdate();
                                     showNotification('success', 'Prioridad actualizada');
@@ -410,6 +411,8 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                     // Revertir cambio optimista
                                     setOptimisticCards(previousCards);
                                     showNotification('error', 'No se pudo actualizar la prioridad');
+                                  } finally {
+                                    endSync(`update-priority-${card.id}`);
                                   }
                                 }}
                                 className="text-xs px-2 py-1 border border-gray-300 rounded-full bg-kodigo-primary/10 text-kodigo-primary font-semibold"

@@ -68,10 +68,11 @@ export const KanbanList: React.FC<KanbanListProps> = ({
     
     setLoading(true);
     try {
-      await onCreateCard(list.id, { title: newCardTitle });
-      setNewCardTitle('');
+      // Optimistic UX: close the add UI immediately and clear input
       setIsAddingCard(false);
-      showNotification('success', 'Tarjeta creada correctamente');
+      const titleToSend = newCardTitle;
+      setNewCardTitle('');
+      await onCreateCard(list.id, { title: titleToSend });
     } catch (error) {
       console.error('Error creating card:', error);
       showNotification('error', error instanceof Error ? error.message : 'Error al crear la tarjeta');

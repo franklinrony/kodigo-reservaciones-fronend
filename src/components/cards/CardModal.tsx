@@ -90,12 +90,37 @@ export const CardModal: React.FC<CardModalProps> = ({
   // Función para obtener la prioridad actual de la tarjeta
   const getCurrentCardPriority = useCallback((): 'baja' | 'media' | 'alta' | 'extremo' | '' => {
     const labelIds = ((card as unknown) as { label_ids?: number[] }).label_ids;
-    if (!labelIds || labelIds.length === 0) return '';
+    if (labelIds && labelIds.length > 0) {
+      // Tomar el primer label_id (asumiendo que solo hay uno para prioridad)
+      const labelId = labelIds[0];
+      return getPriorityFromLabelId(labelId);
+    }
 
-    // Tomar el primer label_id (asumiendo que solo hay uno para prioridad)
-    const labelId = labelIds[0];
-    return getPriorityFromLabelId(labelId);
-  }, [card, getPriorityFromLabelId]);
+    // Si no hay label_ids, intentar con card.labels
+    if (card?.labels && card.labels.length > 0) {
+      // Si ya cargamos globalLabels, preferir matching por id
+      if (globalLabels && globalLabels.length > 0) {
+        const globalIds = new Set(globalLabels.map(l => l.id));
+        const matchById = card.labels.find(l => globalIds.has(l.id));
+        if (matchById) return getPriorityFromLabelId(matchById.id);
+      }
+
+      // Fallback: buscar por palabras clave en el nombre de la label
+      const matchByName = card.labels.find(l => {
+        const n = l.name.toLowerCase();
+        return /alta|media|baja|extremo|high|medium|low/.test(n);
+      });
+      if (matchByName) {
+        const n = matchByName.name.toLowerCase();
+        if (n.includes('alta') || n.includes('high')) return 'alta';
+        if (n.includes('media') || n.includes('medium')) return 'media';
+        if (n.includes('baja') || n.includes('low')) return 'baja';
+        if (n.includes('extremo')) return 'extremo';
+      }
+    }
+
+    return '';
+  }, [card, getPriorityFromLabelId, globalLabels]);
 
   // Calcular permisos del usuario actual usando el hook
   const userCanEdit = canEdit;
