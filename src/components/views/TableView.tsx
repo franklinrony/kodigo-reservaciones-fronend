@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Board, Card, UpdateCardRequest } from '../../models';
+import { Board, Card, UpdateCardRequest, Label } from '../../models';
 import { Calendar, User, Edit2, Check, X, GripVertical } from 'lucide-react';
 import { cardService } from '../../services/cardService';
 import { useNotification } from '../../hooks/useNotification';
@@ -362,12 +362,30 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                 })()}
                                 onChange={async (e) => {
                                   const newLabelId = e.target.value ? parseInt(e.target.value) : undefined;
+                                  // Optimistic update: actualizar estado local inmediatamente
+                                  const previousCards = [...optimisticCards];
+                                  setOptimisticCards(prev => prev.map(c => {
+                                    if (c.id !== card.id) return c;
+                                    if (!newLabelId) return { ...c, labels: [] };
+                                    const found = globalLabels.find(l => l.id === newLabelId);
+                                    const label: Label = {
+                                      id: newLabelId,
+                                      name: found?.name || '',
+                                      color: found?.color || '',
+                                      board_id: board.id,
+                                      created_at: new Date().toISOString(),
+                                      updated_at: new Date().toISOString()
+                                    };
+                                    return { ...c, labels: [label] } as ExtendedCard;
+                                  }));
                                   try {
                                     await cardService.updateCard(card.id, { label_ids: newLabelId ? [newLabelId] : [] });
                                     onBoardUpdate();
                                     showNotification('success', 'Prioridad actualizada');
                                   } catch (err) {
                                     console.error('Error updating priority from table:', err);
+                                    // Revertir cambio optimista
+                                    setOptimisticCards(previousCards);
                                     showNotification('error', 'No se pudo actualizar la prioridad');
                                   }
                                 }}
