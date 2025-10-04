@@ -60,8 +60,7 @@ const NotificationContainer: React.FC = () => {
   if (notifications.length === 0) return null;
 
   return (
-  // Responsive container: small screens use side padding; on sm+ keep max width and anchor to the right.
-  <div className="fixed top-6 right-6 z-50 space-y-3 px-3 sm:px-0 w-[calc(100%-32px)] sm:w-auto sm:max-w-md">
+    <div className="fixed top-4 right-4 z-50 space-y-3 max-w-md">
       {notifications.map((notification: Notification) => (
         <NotificationItem
           key={notification.id}
@@ -120,7 +119,7 @@ const NotificationItem: React.FC<{
 
   return (
     <div 
-      className={`w-full ${styles.bg} ${styles.border} ${styles.shadow} rounded-lg backdrop-blur-sm animate-slide-in-right overflow-hidden transition-all duration-300 hover:scale-[1.02]`}
+      className={`w-full ${styles.bg} ${styles.border} ${styles.shadow} rounded-r-lg backdrop-blur-sm animate-slide-in-right overflow-hidden transition-all duration-300 hover:scale-[1.02]`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
