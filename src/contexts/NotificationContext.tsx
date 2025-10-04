@@ -60,8 +60,9 @@ const NotificationContainer: React.FC = () => {
   if (notifications.length === 0) return null;
 
   return (
-    // Increased width and right offset so notifications are not cramped to the edge
-    <div className="fixed top-6 right-6 z-50 space-y-3 w-96">
+    // Responsive container: on small screens span nearly full width with side margins;
+    // on sm+ keep a max width and anchor to the right.
+    <div className="fixed top-4 sm:top-6 right-3 sm:right-6 z-50 space-y-3 w-[calc(100%-48px)] sm:w-auto sm:max-w-[540px]">
       {notifications.map((notification: Notification) => (
         <NotificationItem
           key={notification.id}
