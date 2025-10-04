@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBoard } from '@/hooks/useBoard';
 import { BoardHeader } from '@/components/boards/BoardHeader';
+import { useBoardPermissionsContext } from '@/contexts/BoardPermissionsContext';
 import { KanbanView } from '@/components/views/KanbanView';
 import { TableView } from '@/components/views/TableView';
 import { CardModal } from '@/components/cards/CardModal';
@@ -12,6 +13,7 @@ export const BoardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const boardId = parseInt(id || '0', 10);
   const { board, loading, error, refetch } = useBoard(boardId);
+  const { refreshBoardPermissions } = useBoardPermissionsContext();
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
@@ -54,7 +56,11 @@ export const BoardPage: React.FC = () => {
         board={board}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        onCollaboratorsUpdate={refetch}
+        onCollaboratorsUpdate={async () => {
+          // Refetch board data and refresh permissions so UI updates immediately
+          await refetch();
+          await refreshBoardPermissions(boardId);
+        }}
         boardOwnerId={board.user_id}
       />
       

@@ -20,6 +20,7 @@ interface BoardPermissionsContextType {
   getBoardPermissions: (boardId: number) => BoardPermissions;
   getBoardUsers: (boardId: number) => User[] | undefined;
   preloadBoardPermissions: (boardIds: number[]) => Promise<void>;
+  refreshBoardPermissions: (boardId: number) => Promise<void>;
 }
 
 const BoardPermissionsContext = createContext<BoardPermissionsContextType | undefined>(undefined);
@@ -73,6 +74,10 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
     return permissions.boardUsers;
   }, [getBoardPermissions]);
 
+  const refreshBoardPermissions = useCallback(async (boardId: number) => {
+    await loadBoardPermissions(boardId, user?.id);
+  }, [user?.id]);
+
   const loadBoardPermissions = async (boardId: number, userId?: number) => {
     if (!userId) {
       const noAccessPermissions: BoardPermissions = {
@@ -102,7 +107,7 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
         userRole = 'owner';
       }
 
-      // Intentar usar los collaborators del board, o cargar usuarios si no están disponibles
+  // Intentar usar los collaborators del board, o cargar usuarios si no están disponibles
       let boardUsers: User[] = [];
       try {
         // Si el board ya incluye collaborators, úsalos
@@ -121,6 +126,32 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
           // Fallback: cargar usuarios con llamada adicional
           boardUsers = await userService.getBoardUsers(boardId);
           console.log('BoardPermissionsProvider - Board users loaded separately:', boardUsers);
+        }
+
+        // Asegurarse de que el owner esté presente en la lista de usuarios
+        if (board.user_id && !boardUsers.some(u => u.id === board.user_id)) {
+          try {
+            const ownerUser = await userService.getUserById(board.user_id);
+            // Añadir owner al inicio con rol owner
+            boardUsers.unshift({
+              id: ownerUser.id,
+              name: ownerUser.name,
+              email: ownerUser.email,
+              created_at: ownerUser.created_at,
+              updated_at: ownerUser.updated_at,
+              role: 'owner'
+            });
+          } catch {
+            // Si no se puede cargar el usuario owner, añadir placeholder mínimo
+            boardUsers.unshift({
+              id: board.user_id,
+              name: 'Owner',
+              email: '',
+              created_at: '',
+              updated_at: '',
+              role: 'owner'
+            } as unknown as User);
+          }
         }
 
         // Si no somos owner, determinar rol basado en la lista de usuarios
@@ -162,6 +193,12 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
 
       // Actualizar cache
       boardPermissionsCache.set(boardId, permissions);
+      // Emitir evento para que hooks que usan permisos puedan re-renderizarse
+      try {
+        window.dispatchEvent(new CustomEvent('boardPermissionsUpdated', { detail: { boardId } }));
+  } catch {
+        // noop
+      }
       forceUpdate({}); // Forzar re-render
 
     } catch (error) {
@@ -176,6 +213,11 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
         boardUsers: []
       };
       boardPermissionsCache.set(boardId, errorPermissions);
+      try {
+        window.dispatchEvent(new CustomEvent('boardPermissionsUpdated', { detail: { boardId } }));
+  } catch {
+        // noop
+      }
       forceUpdate({}); // Forzar re-render
     }
   };
@@ -193,7 +235,8 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
   const contextValue: BoardPermissionsContextType = {
     getBoardPermissions,
     getBoardUsers,
-    preloadBoardPermissions
+    preloadBoardPermissions,
+    refreshBoardPermissions
   };
 
   return (
