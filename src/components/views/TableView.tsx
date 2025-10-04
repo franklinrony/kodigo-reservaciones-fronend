@@ -370,29 +370,22 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                             )}
                           </td>
 
-                          {/* Asignado */}
+                          {/* Asignado: mostrar solo el nombre (assigned_to o responsible) */}
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="space-y-1">
-                              {card.assigned_to && (
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center">
-                                    <User size={12} className="text-white" />
+                            {(() => {
+                              const responsibleName = card.assigned_to || card.responsible || boardUsers.find((u: { id: number; name: string }) => u.id === card.assigned_user_id)?.name;
+                              if (responsibleName) {
+                                return (
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center">
+                                      <User size={12} className="text-white" />
+                                    </div>
+                                    <span className="text-sm text-gray-900">{responsibleName}</span>
                                   </div>
-                                  <span className="text-sm text-gray-900">{card.assigned_to}</span>
-                                </div>
-                              )}
-                              {(() => {
-                                const responsibleName = card.responsible || boardUsers.find((u: { id: number; name: string }) => u.id === card.assigned_user_id)?.name;
-                                return responsibleName ? (
-                                  <div className="text-xs text-gray-500">
-                                    <strong>Resp:</strong> {responsibleName}
-                                  </div>
-                                ) : null;
-                              })()}
-                              {!card.assigned_to && !card.responsible && (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </div>
+                                );
+                              }
+                              return <span className="text-gray-400">-</span>;
+                            })()}
                           </td>
 
                           {/* Comentarios */}
