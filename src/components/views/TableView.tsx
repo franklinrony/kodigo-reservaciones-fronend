@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Board, Card, UpdateCardRequest } from '../../models';
 import { Calendar, User, Edit2, Check, X, GripVertical } from 'lucide-react';
@@ -7,8 +7,6 @@ import { useNotification } from '../../hooks/useNotification';
 import { useSyncContext } from '../../contexts/SyncContext';
 import { truncateText, getPriorityFromLabels, formatDueDate } from '@/utils/textUtils';
 import { labelService } from '@/services/labelService';
-import { useEffect, useState } from 'react';
-import { useNotification } from '@/hooks/useNotification';
 import { useBoardPermissions } from '../../hooks/useBoardPermissions';
 
 interface TableViewProps {
