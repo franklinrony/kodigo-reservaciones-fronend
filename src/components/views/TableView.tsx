@@ -18,6 +18,7 @@ interface TableViewProps {
 interface ExtendedCard extends Card {
   listName: string;
   listId: number;
+  label_ids?: number[];
 }
 
 export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoardUpdate }) => {
@@ -37,8 +38,14 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
   // Actualizar estado optimista cuando cambia el board
   React.useEffect(() => {
     const sortedLists = board.lists?.sort((a, b) => a.position - b.position) || [];
-    const currentCards: ExtendedCard[] = sortedLists.flatMap(list => 
-      (list.cards?.sort((a, b) => a.position - b.position).map(card => ({ ...card, listName: list.name, listId: list.id })) || [])
+    const currentCards: ExtendedCard[] = sortedLists.flatMap(list =>
+      (list.cards?.sort((a, b) => a.position - b.position).map(card => ({
+        ...card,
+        listName: list.name,
+        listId: list.id,
+  // Derivar label_ids si el backend no los provee explícitamente
+  label_ids: ((card as unknown) as { label_ids?: number[] }).label_ids ?? card.labels?.map(l => l.id) ?? []
+      })) || [])
     );
     setOptimisticCards(currentCards);
   }, [board]);
@@ -344,6 +351,11 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                             {canEdit ? (
                               <select
                                 value={(() => {
+                                  // 0) Si el backend ya nos da label_ids, preferirlo directamente
+                                  if (card.label_ids && card.label_ids.length > 0) {
+                                    return card.label_ids[0];
+                                  }
+
                                   // 1) Preferir etiquetas globales: buscar primer label de la tarjeta cuyo id esté en globalLabels
                                   const globalIds = new Set((globalLabels || []).map(l => l.id));
                                   if (card.labels && card.labels.length > 0) {
@@ -366,7 +378,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                   const previousCards = [...optimisticCards];
                                   setOptimisticCards(prev => prev.map(c => {
                                     if (c.id !== card.id) return c;
-                                    if (!newLabelId) return { ...c, labels: [] };
+                                    if (!newLabelId) return { ...c, labels: [], label_ids: [] } as ExtendedCard;
                                     const found = globalLabels.find(l => l.id === newLabelId);
                                     const label: Label = {
                                       id: newLabelId,
@@ -376,7 +388,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                       created_at: new Date().toISOString(),
                                       updated_at: new Date().toISOString()
                                     };
-                                    return { ...c, labels: [label] } as ExtendedCard;
+                                    return { ...c, labels: [label], label_ids: [newLabelId] } as ExtendedCard;
                                   }));
                                   try {
                                     await cardService.updateCard(card.id, { label_ids: newLabelId ? [newLabelId] : [] });
