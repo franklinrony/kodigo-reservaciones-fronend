@@ -344,11 +344,21 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                             {canEdit ? (
                               <select
                                 value={(() => {
-                                  const priorityLabel = (card.labels || []).find(l => {
-                                    const n = l.name.toLowerCase();
-                                    return n.includes('alta') || n.includes('media') || n.includes('baja') || n.includes('extremo') || n.includes('high') || n.includes('low') || n.includes('medium');
-                                  });
-                                  return priorityLabel ? priorityLabel.id : '';
+                                  // 1) Preferir etiquetas globales: buscar primer label de la tarjeta cuyo id esté en globalLabels
+                                  const globalIds = new Set((globalLabels || []).map(l => l.id));
+                                  if (card.labels && card.labels.length > 0) {
+                                    const matchById = card.labels.find(l => globalIds.has(l.id));
+                                    if (matchById) return matchById.id;
+
+                                    // 2) Fallback: buscar por nombre (compatibilidad con etiquetas antiguas)
+                                    const matchByName = card.labels.find(l => {
+                                      const n = l.name.toLowerCase();
+                                      return /alta|media|baja|extremo|high|medium|low/.test(n);
+                                    });
+                                    if (matchByName) return matchByName.id;
+                                  }
+
+                                  return '';
                                 })()}
                                 onChange={async (e) => {
                                   const newLabelId = e.target.value ? parseInt(e.target.value) : undefined;
@@ -361,7 +371,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                                     showNotification('error', 'No se pudo actualizar la prioridad');
                                   }
                                 }}
-                                className="px-2 py-1 text-sm border border-gray-300 rounded"
+                                className="text-xs px-2 py-1 border border-gray-300 rounded-full bg-kodigo-primary/10 text-kodigo-primary font-semibold"
                               >
                                 <option value="">-</option>
                                 {globalLabels.map(label => (
@@ -371,9 +381,9 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                             ) : (
                               (() => {
                                 const { priority, color, text } = getPriorityFromLabels(card.labels);
-                                return priority ? (
+                                  return priority ? (
                                   <span 
-                                    className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+                                    className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full"
                                     style={{
                                       backgroundColor: `${color}20`,
                                       color: color
