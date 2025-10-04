@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Board, Card, UpdateCardRequest } from '../../models';
-import { Calendar, MessageCircle, User, Edit2, Check, X, GripVertical } from 'lucide-react';
+import { Calendar, User, Edit2, Check, X, GripVertical } from 'lucide-react';
 import { cardService } from '../../services/cardService';
 import { useNotification } from '../../hooks/useNotification';
 import { useSyncContext } from '../../contexts/SyncContext';
 import { truncateText, getPriorityFromLabels, formatDueDate } from '@/utils/textUtils';
+import { labelService } from '@/services/labelService';
+import { useEffect, useState } from 'react';
+import { useNotification } from '@/hooks/useNotification';
 import { useBoardPermissions } from '../../hooks/useBoardPermissions';
 
 interface TableViewProps {
@@ -26,6 +29,8 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
   const { showNotification } = useNotification();
   const { startSync, endSync } = useSyncContext();
   const { canEdit } = useBoardPermissions(board.id);
+  const [globalLabels, setGlobalLabels] = useState<Array<{ id: number; name: string; color: string }>>([]);
+  // notification already available as showNotification
   const { boardUsers } = useBoardPermissions(board.id);
 
   // Estado optimista para la tabla
@@ -39,6 +44,21 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
     );
     setOptimisticCards(currentCards);
   }, [board]);
+
+  // Cargar labels globales (prioridades)
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const labels = await labelService.getAllLabels();
+        if (mounted) setGlobalLabels(labels);
+      } catch (error) {
+        console.error('Error loading global labels for TableView:', error);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   // Helper function para revertir cambios optimistas
   const revertOptimisticChanges = () => {
@@ -182,7 +202,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
-              <tr>
+                <tr>
                 <th className="px-2 py-3 w-8"></th> {/* Drag handle */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tarjeta
@@ -199,9 +219,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Asignado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Comentarios
-                </th>
+                {/* Comentarios column removed per request */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
@@ -323,24 +341,53 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                             </div>
                           </td>
 
-                          {/* Prioridad */}
+                          {/* Prioridad (editable inline) */}
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {(() => {
-                              const { priority, color, text } = getPriorityFromLabels(card.labels);
-                              return priority ? (
-                                <span 
-                                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
-                                  style={{
-                                    backgroundColor: `${color}20`,
-                                    color: color
-                                  }}
-                                >
-                                  {text}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              );
-                            })()}
+                            {canEdit ? (
+                              <select
+                                value={(() => {
+                                  const priorityLabel = (card.labels || []).find(l => {
+                                    const n = l.name.toLowerCase();
+                                    return n.includes('alta') || n.includes('media') || n.includes('baja') || n.includes('extremo') || n.includes('high') || n.includes('low') || n.includes('medium');
+                                  });
+                                  return priorityLabel ? priorityLabel.id : '';
+                                })()}
+                                onChange={async (e) => {
+                                  const newLabelId = e.target.value ? parseInt(e.target.value) : undefined;
+                                  try {
+                                    await cardService.updateCard(card.id, { label_ids: newLabelId ? [newLabelId] : [] });
+                                    onBoardUpdate();
+                                    showNotification('success', 'Prioridad actualizada');
+                                  } catch (err) {
+                                    console.error('Error updating priority from table:', err);
+                                    showNotification('error', 'No se pudo actualizar la prioridad');
+                                  }
+                                }}
+                                className="px-2 py-1 text-sm border border-gray-300 rounded"
+                              >
+                                <option value="">-</option>
+                                {globalLabels.map(label => (
+                                  <option key={label.id} value={label.id}>{label.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              (() => {
+                                const { priority, color, text } = getPriorityFromLabels(card.labels);
+                                return priority ? (
+                                  <span 
+                                    className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+                                    style={{
+                                      backgroundColor: `${color}20`,
+                                      color: color
+                                    }}
+                                  >
+                                    {text}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                );
+                              })()
+                            )}
                           </td>
 
                           {/* Lista (Dropdown) */}
@@ -388,17 +435,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
                             })()}
                           </td>
 
-                          {/* Comentarios */}
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {card.comments && card.comments.length > 0 ? (
-                              <div className="flex items-center space-x-1">
-                                <MessageCircle size={14} className="text-kodigo-primary" />
-                                <span>{card.comments.length}</span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </td>
+                          {/* Comentarios column removed */}
 
                           {/* Acciones */}
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
