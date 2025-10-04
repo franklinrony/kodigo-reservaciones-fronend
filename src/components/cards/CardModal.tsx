@@ -88,9 +88,9 @@ export const CardModal: React.FC<CardModalProps> = ({
   }, [globalLabels]);
 
   // Función para obtener la prioridad actual de la tarjeta
-  const getCurrentCardPriority = useCallback((): 'baja' | 'media' | 'alta' | 'extremo' => {
+  const getCurrentCardPriority = useCallback((): 'baja' | 'media' | 'alta' | 'extremo' | '' => {
     const labelIds = ((card as unknown) as { label_ids?: number[] }).label_ids;
-    if (!labelIds || labelIds.length === 0) return 'media';
+    if (!labelIds || labelIds.length === 0) return '';
 
     // Tomar el primer label_id (asumiendo que solo hay uno para prioridad)
     const labelId = labelIds[0];
@@ -128,7 +128,7 @@ export const CardModal: React.FC<CardModalProps> = ({
   const [responsibleUserId, setResponsibleUserId] = useState<number | null>(null); // ID del usuario responsable
   const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [progressPercentage, setProgressPercentage] = useState(0); // Progreso de la tarea (0-100)
-  const [priority, setPriority] = useState<'baja' | 'media' | 'alta' | 'extremo'>('media'); // Prioridad de la tarea
+  const [priority, setPriority] = useState<'baja' | 'media' | 'alta' | 'extremo' | ''>(''); // Prioridad de la tarea
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -172,7 +172,7 @@ export const CardModal: React.FC<CardModalProps> = ({
       setSelectedListId(null);
       setResponsibleUserId(null);
       setProgressPercentage(0);
-      setPriority('media');
+  setPriority('');
       setOriginalData(null);
       setComments([]);
       setCardCreator(null);
@@ -283,11 +283,11 @@ export const CardModal: React.FC<CardModalProps> = ({
           responsibleUserId: newResponsibleUserId,
           selectedListId: card.board_list_id,
           progressPercentage: card.progress_percentage || 0,
-          priority: card.priority || 'media'
+          priority: getCurrentCardPriority() || ''
         });
       }
     }
-  }, [card, boardUsers, originalData]);
+  }, [card, boardUsers, originalData, getCurrentCardPriority]);
 
   const handleSave = async () => {
     if (!card) return;
