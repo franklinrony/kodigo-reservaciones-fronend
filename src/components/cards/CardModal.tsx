@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, User as UserIcon, Save, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Modal } from '@/components/ui/Modal';
-import { Card, UpdateCardRequest, Comment, User } from '@/models';
+import { Card, UpdateCardRequest, Comment, User, Label } from '@/models';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { commentService } from '@/services/commentService';
@@ -32,7 +32,7 @@ export const CardModal: React.FC<CardModalProps> = ({
   const { canEdit, boardUsers } = useBoardPermissions(boardId);
 
   // Estado para las labels globales
-  const [globalLabels, setGlobalLabels] = useState<Array<{ id: number; name: string; color: string }>>([]);
+  const [globalLabels, setGlobalLabels] = useState<Label[]>([]);
 
   // Estados para los datos de usuarios
   const [cardCreator, setCardCreator] = useState<User | null>(null);
@@ -65,12 +65,35 @@ export const CardModal: React.FC<CardModalProps> = ({
     return 'media'; // fallback
   }, [globalLabels]);
 
+  // Función para obtener el label_id correspondiente a una prioridad
+  const getLabelIdForPriority = useCallback((p: 'baja' | 'media' | 'alta' | 'extremo'): number | undefined => {
+    // 1) Primero buscar por la propiedad priority si existe en el label
+    const byPriorityProp = globalLabels.find(l => l.priority === (p === 'extremo' ? undefined : p));
+    if (byPriorityProp) return byPriorityProp.id;
+
+    // 2) Si no existe, buscar por palabras clave en el nombre
+    const keywords: Record<string, string[]> = {
+      alta: ['alta', 'alto', 'high'],
+      media: ['media', 'medio', 'medium'],
+      baja: ['baja', 'bajo', 'low'],
+      extremo: ['extremo', 'urgent', 'critical']
+    };
+
+    const keys = keywords[p] || [];
+    const found = globalLabels.find(label => {
+      const name = (label.name || '').toLowerCase();
+      return keys.some(k => name.includes(k));
+    });
+    return found?.id;
+  }, [globalLabels]);
+
   // Función para obtener la prioridad actual de la tarjeta
   const getCurrentCardPriority = useCallback((): 'baja' | 'media' | 'alta' | 'extremo' => {
-    if (!card?.label_ids || card.label_ids.length === 0) return 'media';
-    
+    const labelIds = ((card as unknown) as { label_ids?: number[] }).label_ids;
+    if (!labelIds || labelIds.length === 0) return 'media';
+
     // Tomar el primer label_id (asumiendo que solo hay uno para prioridad)
-    const labelId = card.label_ids[0];
+    const labelId = labelIds[0];
     return getPriorityFromLabelId(labelId);
   }, [card, getPriorityFromLabelId]);
 
