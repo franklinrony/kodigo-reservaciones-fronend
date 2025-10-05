@@ -36,9 +36,12 @@ export const RegisterForm: React.FC = () => {
     setLoading(true);
 
     try {
+      console.log('RegisterForm - Enviando datos de registro', { name, email });
       await register(name, email, password, confirmPassword);
+      console.log('RegisterForm - register() resolved successfully');
       // La navegación se manejará en el useEffect cuando isAuthenticated cambie
     } catch (err) {
+      console.error('RegisterForm - error en register():', err);
       setError(err instanceof Error ? err.message : 'Error en el registro');
     } finally {
       setLoading(false);
