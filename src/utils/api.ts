@@ -221,6 +221,9 @@ class ApiClient {
         if (respObj) {
           if (typeof respObj.message === 'string') {
             message = respObj.message;
+          } else if (typeof respObj.error === 'string') {
+            // Some APIs (including this backend) return { error: '...' } for 401/403
+            message = respObj.error;
           } else if (respObj.errors && typeof respObj.errors === 'object') {
             const errs = respObj.errors as Record<string, unknown>;
             // Flatten values and pick the first string message if available
