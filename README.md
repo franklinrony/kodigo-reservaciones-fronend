@@ -2,7 +2,7 @@
 
 Proyecto frontend de la aplicación Kodigo Kanban.
 
-Repositorio remoto (frontend): https://github.com/franklinrony/kodigo-reservaciones-fronend
+Repositorio  (frontend): https://github.com/franklinrony/kodigo-reservaciones-fronend
 
 Repositorio backend (API): https://github.com/franklinrony/kodigo-reservaciones-backend
 
@@ -113,6 +113,15 @@ npm run preview
 - Errores de CORS/401 desde el backend:
   - Verifica que `VITE_API_BASE_URL` apunta al backend correcto.
   - Revisa tokens en `localStorage` (la app utiliza `authService` para manejar token local).
+
+## Capturas
+
+Imágenes de ejemplo de la interfaz:
+
+![Captura 1](capturas/1.png)
+![Captura 2](capturas/2.png)
+![Captura 3](capturas/3.png)
+![Captura 4](capturas/4.png)
 
 
 
