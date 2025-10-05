@@ -31,7 +31,28 @@ export const LoginForm: React.FC = () => {
       await login(email, password);
       // La navegación se manejará en el useEffect cuando isAuthenticated cambie
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      console.error('LoginForm - error en login():', err);
+      const apiErr = err as { errors?: Record<string, string[]>; message?: string };
+      if (apiErr && typeof apiErr === 'object' && apiErr.errors) {
+        try {
+          const messages = Object.values(apiErr.errors).flat().filter(Boolean) as string[];
+          if (messages.length > 0) {
+            setError(messages.join(' - '));
+          } else {
+            setError(apiErr.message || 'Error al iniciar sesión');
+          }
+        } catch (parseErr) {
+          console.error('LoginForm - error parsing ApiError.errors', parseErr);
+          setError(apiErr.message || 'Error al iniciar sesión');
+        }
+      } else {
+        // Si la API devolvió un mensaje genérico o 401, mostrar un texto más claro
+        if (apiErr && apiErr.message && /unauthorized|credentials|invalid|401/i.test(apiErr.message)) {
+          setError('Correo o contraseña incorrectos');
+        } else {
+          setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+        }
+      }
     } finally {
       setLoading(false);
     }
