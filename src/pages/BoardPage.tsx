@@ -3,6 +3,9 @@ import { useParams } from 'react-router-dom';
 import { useBoard } from '@/hooks/useBoard';
 import { BoardHeader } from '@/components/boards/BoardHeader';
 import { useBoardPermissionsContext } from '@/contexts/BoardPermissionsContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { labelService } from '@/services/labelService';
+import { userService } from '@/services/userService';
 import { KanbanView } from '@/components/views/KanbanView';
 import { TableView } from '@/components/views/TableView';
 import { CardModal } from '@/components/cards/CardModal';
@@ -14,10 +17,45 @@ export const BoardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const boardId = parseInt(id || '0', 10);
   const { board, loading, error, refetch } = useBoard(boardId);
+  const { loading: authLoading } = useAuth();
   const { refreshBoardPermissions } = useBoardPermissionsContext();
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [loadingRelatedData, setLoadingRelatedData] = useState(false);
+
+  // Load related endpoints required by collaborators view: auth/me (via useAuth), labels and specific user
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const loadRelated = async () => {
+      if (!board) return;
+      setLoadingRelatedData(true);
+      try {
+        // call labels and board owner user in parallel
+        const ownerId = board.user_id;
+        await Promise.all([
+          labelService.getAllLabels(),
+          // If ownerId is present, fetch that user; otherwise skip
+          ownerId ? userService.getUserById(ownerId) : Promise.resolve(null)
+        ]);
+      } catch (err) {
+        // swallow errors here; header will stop loading but other error handling remains elsewhere
+        console.error('Error loading related data:', err);
+      } finally {
+        if (!cancelled) setLoadingRelatedData(false);
+      }
+    };
+
+    // trigger when board becomes available
+    if (board) {
+      loadRelated();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [board]);
 
   const handleCardClick = (card: Card) => {
     setSelectedCard(card);
@@ -75,6 +113,7 @@ export const BoardPage: React.FC = () => {
           await refreshBoardPermissions(boardId);
         }}
         boardOwnerId={board.user_id}
+        loadingRelatedData={authLoading || loadingRelatedData}
       />
       
       <div className="flex-1 overflow-hidden">

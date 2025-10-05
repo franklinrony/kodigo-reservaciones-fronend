@@ -13,6 +13,7 @@ interface BoardHeaderProps {
   onViewModeChange: (mode: 'kanban' | 'table') => void;
   onCollaboratorsUpdate?: () => void;
   boardOwnerId?: number;
+  loadingRelatedData?: boolean;
 }
 
 export const BoardHeader: React.FC<BoardHeaderProps> = ({
@@ -20,7 +21,8 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   viewMode,
   onViewModeChange,
   onCollaboratorsUpdate,
-  boardOwnerId
+  boardOwnerId,
+  loadingRelatedData
 }) => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
@@ -83,14 +85,23 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           </div>
           
           {/* Board Actions */}
-          {canManageCollaborators && (
+          {(canManageCollaborators || loadingRelatedData) && (
             <Button
               variant="ghost"
               size="sm"
               className="text-kodigo-secondary hover:text-kodigo-secondary/80 hover:bg-kodigo-secondary/10 flex items-center"
-              onClick={() => setIsCollaboratorsModalOpen(true)}
+              onClick={() => {
+                // allow opening modal while related data is loading; modal shows internal loader
+                setIsCollaboratorsModalOpen(true);
+              }}
+              aria-busy={loadingRelatedData}
+              title={loadingRelatedData ? 'Cargando datos de colaboradores...' : 'Colaboradores'}
             >
-              <Users size={16} className="mr-1" />
+              {loadingRelatedData ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-kodigo-primary mr-2" />
+              ) : (
+                <Users size={16} className="mr-1" />
+              )}
               <span className="hidden sm:inline">Colaboradores</span>
             </Button>
           )}

@@ -345,8 +345,8 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
             <div className="space-y-3">
               {existingCollaborators.map(user => {
                 return (
-                  <div key={user.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white border rounded-lg">
-                    <div className="flex items-center space-x-3 min-w-0 flex-shrink-0 w-full">
+                  <div key={user.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white border rounded-lg overflow-hidden">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
                       <div className="w-8 h-8 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center flex-shrink-0">
                         <User size={14} className="text-white" />
                       </div>
