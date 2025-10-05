@@ -6,6 +6,12 @@ Repositorio  (frontend): https://github.com/franklinrony/kodigo-reservaciones-fr
 
 Repositorio backend (API): https://github.com/franklinrony/kodigo-reservaciones-backend
 
+## Demo
+
+Puedes ver una versión demo pública de la aplicación en:
+
+http://kanban-kodigo.westus2.cloudapp.azure.com/
+
 ## Resumen
 
 Kodigo Kanban es una interfaz React + TypeScript para gestionar tableros Kanban y tables con soporte de colaboradores, etiquetas, comentarios y gestión de tarjetas. Esta app se integra con una API REST (Laravel en el backend) y usa Vite para el desarrollo local.
