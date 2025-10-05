@@ -53,24 +53,7 @@ export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoar
     setOptimisticCards(currentCards);
   }, [board]);
 
-  // DEV-only debug: print derived labels and card label snapshots to help trace mismatches
-  React.useEffect(() => {
-    // Only run debug logs in development
-    if (!(import.meta as { env?: { DEV?: boolean } }).env?.DEV) return;
-    try {
-      console.group('[TableView] DEBUG snapshot');
-      console.debug('board.id', board?.id);
-      console.debug('globalLabels:', globalLabels);
-      const embedded = (board.lists || [])
-        .flatMap(l => l.cards || [])
-        .map(c => ({ id: c.id, labels: c.labels || [] }));
-      console.debug('embedded card labels sample:', embedded);
-      console.debug('optimisticCards snapshot:', optimisticCards.map(c => ({ id: c.id, label_ids: (c as unknown as { label_ids?: number[] }).label_ids, labels: c.labels })));
-      console.groupEnd();
-    } catch (err) {
-      console.warn('[TableView] debug failed', err);
-    }
-  }, [globalLabels, optimisticCards, board]);
+  // Dev debug logs removed in production commit
 
   // No label preloading in table view; priorities are derived from card.labels when present
 
