@@ -215,8 +215,7 @@ export const CardModal: React.FC<CardModalProps> = ({
     // Iniciar carga
     setIsLoading(true);
 
-    console.log('CardModal - Card data:', card);
-    console.log('CardModal - card.user_id:', card.user_id);
+  // Debug logs removed
 
     const initialProgress = card.progress_percentage || 0;
 
@@ -286,8 +285,7 @@ export const CardModal: React.FC<CardModalProps> = ({
   // Efecto para establecer el responsable cuando se cargan los usuarios del tablero
   useEffect(() => {
     if (card && boardUsers.length > 0) {
-      console.log('Card data:', card);
-      console.log('Board users:', boardUsers);
+    // Debug logs removed
       
       let responsibleUser = null;
       let newResponsibleUserId = null;
@@ -295,23 +293,19 @@ export const CardModal: React.FC<CardModalProps> = ({
       // 1. Buscar por assigned_user_id si existe (campo correcto del backend)
       if (card.assigned_user_id) {
         responsibleUser = boardUsers.find(user => user.id === card.assigned_user_id);
-        console.log('Found by assigned_user_id:', responsibleUser);
       }
       
       // 2. Si no se encontró, buscar por assigned_to (nombre)
       if (!responsibleUser && card.assigned_to) {
         responsibleUser = boardUsers.find(user => user.name === card.assigned_to);
-        console.log('Found by assigned_to:', responsibleUser);
       }
       
       // 3. Si no se encontró, buscar por responsible (nombre)
       if (!responsibleUser && card.responsible) {
         responsibleUser = boardUsers.find(user => user.name === card.responsible);
-        console.log('Found by responsible:', responsibleUser);
       }
 
-      newResponsibleUserId = responsibleUser?.id || null;
-      console.log('Setting responsibleUserId to:', newResponsibleUserId);
+  newResponsibleUserId = responsibleUser?.id || null;
       
       // Solo actualizar si es diferente (inicialización)
       setResponsibleUserId(newResponsibleUserId);
@@ -396,17 +390,7 @@ export const CardModal: React.FC<CardModalProps> = ({
         }
       }
 
-      console.log('CardModal - Current values:', {
-        title,
-        description,
-        dueDate,
-        responsibleUserId,
-        progressPercentage,
-        selectedListId,
-        priority
-      });
-      console.log('CardModal - Original data:', originalData);
-      console.log('CardModal - Final payload:', payload);
+      // Debug logs removed
       
       await onUpdateCard(card.id, payload);
 

@@ -19,16 +19,10 @@ export const authService = {
   },
 
   async getMe(): Promise<User> {
-    console.log('authService.getMe - Haciendo llamada a /api/auth/me...');
-    
     try {
       const response = await apiClient.get<LaravelUserResponse>('/api/auth/me');
-      console.log('authService.getMe - Respuesta completa:', response);
-      
       const user = extractLaravelData<User>(response, 'user');
-      console.log('authService.getMe - ✅ Usuario extraído:', user);
       return user;
-      
     } catch (error) {
       console.error('authService.getMe - Error en la llamada:', error);
       throw error;

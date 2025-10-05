@@ -8,16 +8,13 @@ import {
 
 export const boardService = {
   async getBoards(): Promise<Board[]> {
-    console.log('boardService.getBoards - Haciendo llamada a /api/v1/boards...');
     const response = await apiClient.get<LaravelBoardsResponse>('/api/v1/boards');
-    console.log('boardService.getBoards - Respuesta completa:', response);
-    
+
     try {
       const boards = extractLaravelData<Board[]>(response, 'boards');
-      console.log('boardService.getBoards - ✅ Extraídos', boards.length, 'tableros');
       return boards;
     } catch (error) {
-      console.error('boardService.getBoards - ❌ Error extrayendo tableros:', error);
+      console.error('boardService.getBoards - Error extrayendo tableros:', error);
       return [];
     }
   },

@@ -11,7 +11,7 @@ export const BoardsPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  console.log('BoardsPage - Estado actual:', { boards, loading, error });
+  // debug logs removed
 
   // Wrapper para el callback de crear tablero
   const handleCreateBoard = async (boardData: CreateBoardRequest): Promise<void> => {
@@ -21,21 +21,16 @@ export const BoardsPage: React.FC = () => {
 
   // Verificación defensiva para evitar el crash
   const safeBoardsList = boards || [];
-  console.log('BoardsPage - safeBoardsList:', safeBoardsList);
-  console.log('BoardsPage - safeBoardsList.length:', safeBoardsList.length);
+  // debug logs removed
   
   const filteredBoards = safeBoardsList.filter(board =>
     board.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (board.description && board.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  console.log('BoardsPage - filteredBoards:', filteredBoards);
-  console.log('BoardsPage - filteredBoards.length:', filteredBoards.length);
-  console.log('BoardsPage - searchTerm:', searchTerm);
-  console.log('BoardsPage - Condición para mostrar "no hay tableros":', filteredBoards.length === 0);
+  // debug logs removed
 
   if (loading) {
-    console.log('BoardsPage - Mostrando loading...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -47,7 +42,6 @@ export const BoardsPage: React.FC = () => {
   }
 
   if (error) {
-    console.log('BoardsPage - Mostrando error:', error);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -58,9 +52,7 @@ export const BoardsPage: React.FC = () => {
     );
   }
 
-  console.log('BoardsPage - Renderizando página principal...');
-  console.log('BoardsPage - ¿Mostrar mensaje vacío?', filteredBoards.length === 0);
-  console.log('BoardsPage - ¿Mostrar grilla de tableros?', filteredBoards.length > 0);
+  // debug logs removed
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -15,9 +15,7 @@ export const LoginForm: React.FC = () => {
 
   // Redirigir si ya está autenticado
   useEffect(() => {
-    console.log('LoginForm - Estado actual:', { authLoading, isAuthenticated });
     if (!authLoading && isAuthenticated) {
-      console.log('LoginForm - Iniciando redirección a /boards');
       navigate('/boards', { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate]);

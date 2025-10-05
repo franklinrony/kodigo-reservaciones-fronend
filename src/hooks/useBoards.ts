@@ -15,21 +15,16 @@ export const useBoards = () => {
 
   const fetchBoards = useCallback(async () => {
     try {
-      console.log('useBoards - Iniciando fetch de tableros...');
       setLoading(true);
       const data = await boardService.getBoards();
-      console.log('useBoards - Tableros obtenidos:', data);
-      console.log('useBoards - Tipo de data:', typeof data);
-      console.log('useBoards - Es array?:', Array.isArray(data));
+      // debug logs removed
       setBoards(data);
       setError(null);
 
       // Precargar permisos de todos los tableros
       if (data && data.length > 0) {
-        const boardIds = data.map(board => board.id);
-        console.log('useBoards - Precargando permisos para boards:', boardIds);
-        await preloadBoardPermissionsRef.current(boardIds);
-        console.log('useBoards - Permisos precargados');
+  const boardIds = data.map(board => board.id);
+  await preloadBoardPermissionsRef.current(boardIds);
       }
     } catch (err) {
       console.error('useBoards - Error al obtener tableros:', err);

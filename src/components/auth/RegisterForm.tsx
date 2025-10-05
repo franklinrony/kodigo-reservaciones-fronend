@@ -17,9 +17,7 @@ export const RegisterForm: React.FC = () => {
 
   // Redirigir si ya está autenticado
   useEffect(() => {
-    console.log('RegisterForm - Estado actual:', { authLoading, isAuthenticated });
     if (!authLoading && isAuthenticated) {
-      console.log('RegisterForm - Iniciando redirección a /boards');
       navigate('/boards', { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate]);
@@ -42,9 +40,7 @@ export const RegisterForm: React.FC = () => {
     setLoading(true);
 
     try {
-      console.log('RegisterForm - Enviando datos de registro', { name, email });
       await register(name, email, password, confirmPassword);
-      console.log('RegisterForm - register() resolved successfully');
       // La navegación se manejará en el useEffect cuando isAuthenticated cambie
     } catch (errUnknown) {
       console.error('RegisterForm - error en register():', errUnknown);

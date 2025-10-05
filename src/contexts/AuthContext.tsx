@@ -52,8 +52,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    console.log('AuthContext - Iniciando login...');
-    
     // TEMPORAL: Mock para testing sin backend
     if (email === 'test@test.com' && password === 'test123') {
       const mockResponse = {
@@ -66,32 +64,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           updated_at: new Date().toISOString()
         }
       };
-      console.log('AuthContext - Usando respuesta mock:', mockResponse);
       authService.setToken(mockResponse.token);
       setUser(mockResponse.user);
-      console.log('AuthContext - Usuario establecido:', mockResponse.user);
       return;
     }
-    
+
     try {
       // Login y obtener token
       const response = await authService.login({ email, password });
-      console.log('AuthContext - Respuesta del login:', response);
-      
+
       // Guardar token
       authService.setToken(response.token);
-      
+
       // Obtener datos del usuario con el token
-      console.log('AuthContext - Obteniendo datos del usuario...');
       const userData = await authService.getMe();
-      console.log('AuthContext - Datos del usuario obtenidos:', userData);
-      
+
       if (!userData) {
         throw new Error('No se pudieron obtener los datos del usuario');
       }
-      
+
       setUser(userData);
-      console.log('AuthContext - Usuario establecido:', userData);
     } catch (error) {
       console.error('Error en login:', error);
       throw error;
@@ -99,11 +91,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (name: string, email: string, password: string, passwordConfirmation: string) => {
-    console.log('AuthContext - Iniciando registro...');
     // NOTE: Previously there was a development mock here that short-circuited
     // the real registration request. Remove the mock so the app always calls
     // the backend via authService.register and then fetches the current user.
-    
+
     try {
       // Registro y obtener token
       const response = await authService.register({
@@ -112,22 +103,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         password,
         password_confirmation: passwordConfirmation,
       });
-      console.log('AuthContext - Respuesta del registro:', response);
-      
+
       // Guardar token
       authService.setToken(response.token);
-      
+
       // Obtener datos del usuario con el token
-      console.log('AuthContext - Obteniendo datos del usuario después del registro...');
       const userData = await authService.getMe();
-      console.log('AuthContext - Datos del usuario obtenidos:', userData);
-      
+
       if (!userData) {
         throw new Error('No se pudieron obtener los datos del usuario después del registro');
       }
-      
+
       setUser(userData);
-      console.log('AuthContext - Usuario establecido:', userData);
     } catch (error) {
       console.error('Error en registro:', error);
       throw error;

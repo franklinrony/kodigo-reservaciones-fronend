@@ -98,8 +98,7 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
       // Cargar el board primero para determinar permisos básicos
       const board = await boardService.getBoardById(boardId.toString());
 
-      console.log('BoardPermissionsProvider - User ID:', userId);
-      console.log('BoardPermissionsProvider - Board owner ID:', board.user_id);
+  // debug logs removed
 
       // Determinar rol básico basado en el board
       let userRole: UserBoardRole = null;
@@ -111,7 +110,7 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
       let boardUsers: User[] = [];
       try {
         // Si el board ya incluye collaborators, úsalos
-        if (board.collaborators && board.collaborators.length > 0) {
+          if (board.collaborators && board.collaborators.length > 0) {
           // Los collaborators ya incluyen la info del usuario
           boardUsers = board.collaborators.map(collaborator => ({
             id: collaborator.id,
@@ -121,11 +120,10 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
             updated_at: collaborator.updated_at,
             role: (collaborator.pivot?.role as 'owner' | 'admin' | 'editor' | 'viewer') || undefined
           }));
-          console.log('BoardPermissionsProvider - Using collaborators from board:', boardUsers);
+          // using collaborators from board
         } else {
           // Fallback: cargar usuarios con llamada adicional
           boardUsers = await userService.getBoardUsers(boardId);
-          console.log('BoardPermissionsProvider - Board users loaded separately:', boardUsers);
         }
 
         // Asegurarse de que el owner esté presente en la lista de usuarios
@@ -157,17 +155,11 @@ export const BoardPermissionsProvider: React.FC<BoardPermissionsProviderProps> =
         // Si no somos owner, determinar rol basado en la lista de usuarios
         if (userRole !== 'owner') {
           const boardUser = boardUsers.find(user => user.id === userId);
-          console.log('BoardPermissionsProvider - Finding user role:', {
-            userId,
-            boardUsers: boardUsers.map(u => ({ id: u.id, role: u.role })),
-            foundUser: boardUser
-          });
+          // debug: finding user role
           if (boardUser) {
             userRole = boardUser.role as UserBoardRole || 'editor';
-            console.log('BoardPermissionsProvider - Assigned role:', userRole);
           } else {
             userRole = null;
-            console.log('BoardPermissionsProvider - User not found in collaborators, role: null');
           }
         }
       } catch (usersError) {

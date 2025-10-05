@@ -1,20 +1,18 @@
 import React from 'react';
 import { KanbanCard } from '@/components/cards/KanbanCard';
 import { mockCards } from '@/utils/mockData';
-import '@/utils/testDateFormats'; // Importar las pruebas de fecha
 
 export const CardPreview: React.FC = () => {
   const handleCardClick = (cardId: number) => {
-    console.log('Card clicked:', cardId);
+    alert('Tarjeta clickeada: ' + cardId);
   };
 
   const handleDeleteCard = async (cardId: number) => {
-    console.log('Delete card:', cardId);
     alert('Función de eliminación activada para la tarjeta ' + cardId);
   };
 
-  const handleUpdateCard = async (cardId: number, cardData: { title?: string; description?: string }) => {
-    console.log('Update card:', cardId, cardData);
+  const handleUpdateCard = async (_cardId: number, cardData: { title?: string; description?: string }) => {
+    // preview update handler
     alert(`Tarjeta actualizada: ${JSON.stringify(cardData)}`);
   };
 
@@ -54,10 +52,9 @@ export const CardPreview: React.FC = () => {
             </ul>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">🧪 Pruebas de Fechas (Ver consola):</h3>
+              <h3 className="font-semibold text-blue-900 mb-2">🧪 Pruebas de Fechas:</h3>
               <p className="text-sm text-blue-800 mb-3">
-                Se han ejecutado pruebas automáticas de formato de fechas. Abre la consola del navegador (F12) 
-                para ver los diferentes formatos aplicados.
+                Las utilidades de formato de fechas están disponibles en `src/utils/textUtils`.
               </p>
               
               <h4 className="font-semibold text-blue-900 mb-2">Instrucciones de Uso:</h4>

@@ -84,7 +84,6 @@ class ApiClient {
       
       if (newToken) {
         localStorage.setItem('auth_token', newToken);
-        console.log('✅ Token refreshed successfully');
         return newToken;
       }
       
@@ -111,9 +110,7 @@ class ApiClient {
   }
 
   private getAuthToken(): string | null {
-    const token = localStorage.getItem('auth_token');
-    console.log('API Client - Token obtenido de localStorage:', token ? `${token.substring(0, 20)}...` : 'null');
-    return token;
+  return localStorage.getItem('auth_token');
   }
 
   private getFullUrl(endpoint: string): string {
@@ -158,22 +155,14 @@ class ApiClient {
       return fetch(url, config);
     };
 
-    console.log(`API Request - ${options.method || 'GET'} ${url}`);
-    console.log(`API Request - Include Auth: ${shouldIncludeAuth}`);
-    if (import.meta.env.DEV && options.method && (options.method === 'POST' || options.method === 'PUT')) {
-      try {
-        console.log('API Request - Body:', options.body ? JSON.parse(options.body as string) : null);
-      } catch (err) {
-        console.log('API Request - Body (raw):', options.body, 'parse error:', err);
-      }
-    }
+    // Debug logs removed for request tracing
 
     try {
       let response = await makeRequest(token);
       
       // Si la respuesta es 401 (Unauthorized) y no es una ruta de auth, intentar refresh
       if (response.status === 401 && shouldIncludeAuth && !this.shouldExcludeAuth(endpoint)) {
-        console.log('🔄 Token expired, attempting refresh...');
+  // Token expired, attempting refresh
         
         if (this.isRefreshing) {
           // Si ya estamos refrescando, agregar a la cola
@@ -206,10 +195,7 @@ class ApiClient {
         }
       }
 
-      console.log('API Request - Response status:', response.status);
-      
-  const data: unknown = await response.json();
-  console.log('API Request - Response data:', data);
+    const data: unknown = await response.json();
   const respObj = (data && typeof data === 'object' && data !== null) ? (data as Record<string, unknown>) : undefined;
 
       if (!response.ok) {
