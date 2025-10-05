@@ -29,9 +29,13 @@ export const Input: React.FC<InputProps> = ({
         )}
         <input
           className={clsx(
-            'block w-full rounded-lg border-gray-300 shadow-sm focus:ring-kodigo-primary focus:border-kodigo-primary sm:text-sm transition-colors duration-200',
+            // use form-input from @tailwindcss/forms as a baseline when available
+            'form-input block w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 shadow-sm',
+            'focus:outline-none focus:ring-2 focus:ring-kodigo-primary/40 focus:border-kodigo-primary transition-colors duration-150',
             {
+              // leave space for icon when provided
               'pl-10': icon,
+              // error overrides
               'border-red-300 focus:ring-red-500 focus:border-red-500': error,
             },
             className

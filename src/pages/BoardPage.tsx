@@ -8,6 +8,7 @@ import { TableView } from '@/components/views/TableView';
 import { CardModal } from '@/components/cards/CardModal';
 import { Card, UpdateCardRequest } from '@/models';
 import { cardService } from '@/services/cardService';
+import MobileDisclaimer from '@/components/ui/MobileDisclaimer';
 
 export const BoardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,8 +25,20 @@ export const BoardPage: React.FC = () => {
   };
 
   const handleUpdateCard = async (cardId: number, cardData: UpdateCardRequest) => {
-    await cardService.updateCard(cardId, cardData);
-    refetch();
+    try {
+      await cardService.updateCard(cardId, cardData);
+      // Wait for refetch to complete so callers (e.g. CardModal) see updated board data
+      const refreshed = await refetch();
+      // If the modal has that card open, update selectedCard with the fresh data
+      if (refreshed && selectedCard && selectedCard.id === cardId) {
+  const freshCard = refreshed.lists?.flatMap(l => l.cards || []).find((c: unknown) => (c as Card).id === cardId) as Card | undefined;
+        if (freshCard) setSelectedCard(freshCard);
+      }
+    } catch (error) {
+      console.error('Error in handleUpdateCard:', error);
+      // Re-throw so callers can handle the error
+      throw error;
+    }
   };
 
   if (loading) {
@@ -65,6 +78,7 @@ export const BoardPage: React.FC = () => {
       />
       
       <div className="flex-1 overflow-hidden">
+        <MobileDisclaimer />
         {viewMode === 'kanban' ? (
           <KanbanView
             board={board}

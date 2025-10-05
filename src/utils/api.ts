@@ -160,6 +160,13 @@ class ApiClient {
 
     console.log(`API Request - ${options.method || 'GET'} ${url}`);
     console.log(`API Request - Include Auth: ${shouldIncludeAuth}`);
+    if (import.meta.env.DEV && options.method && (options.method === 'POST' || options.method === 'PUT')) {
+      try {
+        console.log('API Request - Body:', options.body ? JSON.parse(options.body as string) : null);
+      } catch (err) {
+        console.log('API Request - Body (raw):', options.body, 'parse error:', err);
+      }
+    }
 
     try {
       let response = await makeRequest(token);

@@ -39,8 +39,10 @@ export const useBoard = (boardId: number) => {
       const data = await boardService.getBoardById(boardId.toString());
       setBoard(data);
       setError(null);
+      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch board');
+      throw err;
     } finally {
       setLoading(false);
       endSync('board-refetch');

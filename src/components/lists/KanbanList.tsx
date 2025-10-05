@@ -130,7 +130,7 @@ export const KanbanList: React.FC<KanbanListProps> = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className="bg-white rounded-lg p-4 w-80 flex-shrink-0 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+          className="bg-white rounded-lg p-3 w-60 sm:w-68 md:w-80 flex-shrink-0 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 snap-start"
         >
           <div {...provided.dragHandleProps} className="flex items-center justify-between mb-4">
             {isEditingTitle ? (
@@ -156,17 +156,17 @@ export const KanbanList: React.FC<KanbanListProps> = ({
               <h3 
                 className={`font-medium text-kodigo-primary rounded px-2 py-1 -mx-2 -my-1 transition-colors ${
                   canEdit ? 'cursor-pointer hover:bg-kodigo-light/20' : ''
-                }`}
+                } text-sm sm:text-base`}
                 onClick={() => canEdit && setIsEditingTitle(true)}
                 title={canEdit ? "Haz clic para editar" : "No tienes permisos para editar"}
               >
                 {list.name}
               </h3>
             )}
-            <div className="flex items-center space-x-1">
-              <span className="text-sm text-kodigo-secondary font-medium bg-kodigo-secondary/10 px-2 py-1 rounded-full">
-                {list.cards?.length || 0}
-              </span>
+              <div className="flex items-center space-x-1">
+                <span className="text-xs sm:text-sm text-kodigo-secondary font-medium bg-kodigo-secondary/10 px-2 py-0.5 rounded-full">
+                  {list.cards?.length || 0}
+                </span>
               <div className="relative" ref={menuRef}>
                 {(canEdit || canDelete) && (
                   <button 
@@ -231,45 +231,47 @@ export const KanbanList: React.FC<KanbanListProps> = ({
                 ))}
                 {provided.placeholder}
                 
-                {isAddingCard ? (
-                  <div className="bg-white rounded-lg shadow-sm border border-kodigo-primary/20 p-4 mb-3">
-                    <textarea
-                      value={newCardTitle}
-                      onChange={(e) => setNewCardTitle(e.target.value)}
-                      placeholder="Ingresa un título para esta tarjeta..."
-                      className="w-full resize-none border-0 focus:ring-0 p-0 text-sm focus:outline-none"
-                      rows={3}
-                      autoFocus
-                    />
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Button
-                        size="sm"
-                        onClick={handleCreateCard}
-                        loading={loading}
-                        variant="gradient"
-                      >
-                        Agregar tarjeta
-                      </Button>
+                    {isAddingCard ? (
+                      <div className="bg-white rounded-lg shadow-sm border border-kodigo-primary/20 p-3 mb-3">
+                        <textarea
+                          value={newCardTitle}
+                          onChange={(e) => setNewCardTitle(e.target.value)}
+                          placeholder="Ingresa un título para esta tarjeta..."
+                          className="w-full resize-none border-0 focus:ring-0 p-0 text-sm focus:outline-none"
+                          rows={2}
+                          autoFocus
+                        />
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Button
+                            size="sm"
+                            onClick={handleCreateCard}
+                            loading={loading}
+                            variant="gradient"
+                            className="flex-1"
+                          >
+                            Agregar
+                          </Button>
+                          <button
+                            onClick={() => {
+                              setIsAddingCard(false);
+                              setNewCardTitle('');
+                            }}
+                            className="text-gray-500 hover:text-kodigo-primary transition-colors duration-200 px-2"
+                            aria-label="Cancelar agregar tarjeta"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ) : canEdit ? (
                       <button
-                        onClick={() => {
-                          setIsAddingCard(false);
-                          setNewCardTitle('');
-                        }}
-                        className="text-gray-500 hover:text-kodigo-primary transition-colors duration-200"
+                        onClick={() => setIsAddingCard(true)}
+                        className="flex items-center space-x-2 text-kodigo-primary hover:text-kodigo-dark w-full p-2 rounded-md hover:bg-kodigo-light/20 transition-all duration-200 text-sm"
                       >
-                        ✕
+                        <Plus size={14} />
+                        <span className="text-sm">Agregar tarjeta</span>
                       </button>
-                    </div>
-                  </div>
-                ) : canEdit ? (
-                  <button
-                    onClick={() => setIsAddingCard(true)}
-                    className="flex items-center space-x-2 text-kodigo-primary hover:text-kodigo-dark w-full p-3 rounded-lg hover:bg-kodigo-light/20 transition-all duration-200"
-                  >
-                    <Plus size={16} />
-                    <span className="text-sm">Agregar una tarjeta</span>
-                  </button>
-                ) : null}
+                    ) : null}
               </div>
             )}
           </Droppable>

@@ -194,8 +194,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const handleUpdateCard = async (cardId: number, cardData: { title?: string; description?: string }) => {
     startSync(`update-card-${cardId}`);
     try {
-      await cardService.updateCard(cardId, cardData);
-      onBoardUpdate();
+  await cardService.updateCard(cardId, cardData);
+  // Wait for the parent to refetch board data
+  await onBoardUpdate();
       showNotification('success', 'Tarjeta actualizada correctamente');
     } catch (error) {
       console.error('Error updating card:', error);
@@ -284,13 +285,13 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="p-6 h-full overflow-x-auto bg-gray-50">
+      <div className="p-4 sm:p-6 h-full bg-gray-50 overflow-auto">
         <Droppable droppableId="board" direction="horizontal" type="LIST">
           {(provided) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="flex space-x-6"
+              className="flex space-x-4 sm:space-x-6 overflow-x-auto py-2 -mx-4 sm:mx-0 px-4 sm:px-0 snap-x snap-mandatory sm:snap-none scroll-smooth"
             >
               {lists.map((list, index) => (
                 <KanbanList
@@ -310,7 +311,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
               {/* Add List Button - Only visible for users who can edit */}
               {canEdit && (
-                <div className="w-80 flex-shrink-0">
+                <div className="w-72 sm:w-80 flex-shrink-0">
                   {isAddingList ? (
                     <div className="bg-white rounded-lg p-4 shadow-md border">
                       <input

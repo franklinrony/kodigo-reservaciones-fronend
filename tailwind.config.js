@@ -55,5 +55,8 @@ export default {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    // Forms plugin provides better defaults for inputs, selects, textareas and radios/checkboxes
+    require('@tailwindcss/forms'),
+  ],
 };

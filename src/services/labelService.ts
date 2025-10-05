@@ -17,17 +17,17 @@ export const labelService = {
   },
 
   async getLabel(labelId: number): Promise<Label> {
-    const response = await apiClient.get<any>(`/api/v1/labels/${labelId}`);
+    const response = await apiClient.get<import('@/models').LaravelResponse<Label>>(`/api/v1/labels/${labelId}`);
     return extractLaravelData<Label>(response, 'label');
   },
 
   async createLabel(boardId: number, labelData: CreateLabelRequest): Promise<Label> {
-    const response = await apiClient.post<any>(`/api/v1/boards/${boardId}/labels`, labelData);
+    const response = await apiClient.post<import('@/models').LaravelResponse<Label>>(`/api/v1/boards/${boardId}/labels`, labelData);
     return extractLaravelData<Label>(response, 'label');
   },
 
   async updateLabel(labelId: number, labelData: Partial<CreateLabelRequest>): Promise<Label> {
-    const response = await apiClient.put<any>(`/api/v1/labels/${labelId}`, labelData);
+    const response = await apiClient.put<import('@/models').LaravelResponse<Label>>(`/api/v1/labels/${labelId}`, labelData);
     return extractLaravelData<Label>(response, 'label');
   },
 

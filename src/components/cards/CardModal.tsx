@@ -10,6 +10,8 @@ import { userService } from '@/services/userService';
 import { labelService } from '@/services/labelService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBoardPermissions } from '@/hooks/useBoardPermissions';
+import { useNotification } from '@/hooks/useNotification';
+import { useSyncContext } from '@/contexts/SyncContext';
 
 interface CardModalProps {
   card: Card | null;
@@ -30,6 +32,9 @@ export const CardModal: React.FC<CardModalProps> = ({
 }) => {
   const { user: currentUser } = useAuth();
   const { canEdit, boardUsers } = useBoardPermissions(boardId);
+  const { showNotification } = useNotification();
+  const { startSync, endSync, isSyncing } = useSyncContext();
+  const [pendingNotification, setPendingNotification] = useState<'success' | 'error' | null>(null);
 
   // Estado para las labels globales
   const [globalLabels, setGlobalLabels] = useState<Label[]>([]);
@@ -38,18 +43,19 @@ export const CardModal: React.FC<CardModalProps> = ({
   const [cardCreator, setCardCreator] = useState<User | null>(null);
   const [assignedByUser, setAssignedByUser] = useState<User | null>(null);
 
-  // Cargar labels globales al montar el componente
+  // Cargar labels globales al montar el componente (por tablero)
   useEffect(() => {
     const loadGlobalLabels = async () => {
       try {
-        const labels = await labelService.getAllLabels();
-        setGlobalLabels(labels);
+  if (!boardId) return;
+  const labels = await labelService.getAllLabels();
+  setGlobalLabels(labels);
       } catch (error) {
         console.error('Error loading global labels:', error);
       }
     };
     loadGlobalLabels();
-  }, []);
+  }, [boardId]);
 
   // Función para convertir label_id a prioridad
   const getPriorityFromLabelId = useCallback((labelId: number): 'baja' | 'media' | 'alta' | 'extremo' => {
@@ -154,6 +160,7 @@ export const CardModal: React.FC<CardModalProps> = ({
   const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [progressPercentage, setProgressPercentage] = useState(0); // Progreso de la tarea (0-100)
   const [priority, setPriority] = useState<'baja' | 'media' | 'alta' | 'extremo' | ''>(''); // Prioridad de la tarea
+  const [selectedPriorityLabelId, setSelectedPriorityLabelId] = useState<number | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -231,6 +238,17 @@ export const CardModal: React.FC<CardModalProps> = ({
     setSelectedListId(cardData.selectedListId);
     setProgressPercentage(initialProgress);
   setPriority(cardData.priority);
+    // Initialize selectedPriorityLabelId from card's existing labels or label_ids
+    const existingLabelIds = ((card as unknown) as { label_ids?: number[] }).label_ids;
+    if (existingLabelIds && existingLabelIds.length > 0) {
+      setSelectedPriorityLabelId(existingLabelIds[0]);
+    } else if (card.labels && card.labels.length > 0) {
+      // If card has embedded labels, pick the first label that looks like a priority label
+      const priorityCandidate = card.labels.find(l => /alta|alto|media|medio|baja|bajo|extremo|urgent|critical|high|medium|low/i.test(l.name));
+      setSelectedPriorityLabelId(priorityCandidate ? priorityCandidate.id : card.labels[0].id);
+    } else {
+      setSelectedPriorityLabelId(null);
+    }
     // No establecer originalData aquí, se hará cuando se carguen los usuarios
 
     // Cargar datos asíncronos
@@ -318,7 +336,10 @@ export const CardModal: React.FC<CardModalProps> = ({
     if (!card) return;
     
     setLoading(true);
-    try {
+  // Start a sync operation so SyncIndicator shows
+  startSync(`update-card-${card.id}`);
+  let saveSucceeded = false;
+  try {
       // Construir payload limpio solo con campos que se pueden actualizar
       const payload: UpdateCardRequest = {};
 
@@ -358,14 +379,19 @@ export const CardModal: React.FC<CardModalProps> = ({
         payload.list_id = selectedListId;
       }
 
-      if (priority !== originalData?.priority) {
-        // Si priority es vacío, quitar prioridad
-        if (!priority) {
-          payload.label_ids = [];
+      if (priority !== originalData?.priority || selectedPriorityLabelId !== null) {
+        // Si se seleccionó un label id explícito, usarlo
+        if (selectedPriorityLabelId !== null) {
+          payload.label_ids = [selectedPriorityLabelId];
         } else {
-          const priorityLabelId = getLabelIdForPriority(priority as 'baja' | 'media' | 'alta' | 'extremo');
-          if (priorityLabelId) {
-            payload.label_ids = [priorityLabelId];
+          // Si priority es vacío, quitar prioridad
+          if (!priority) {
+            payload.label_ids = [];
+          } else {
+            const priorityLabelId = getLabelIdForPriority(priority as 'baja' | 'media' | 'alta' | 'extremo');
+            if (priorityLabelId) {
+              payload.label_ids = [priorityLabelId];
+            }
           }
         }
       }
@@ -383,7 +409,10 @@ export const CardModal: React.FC<CardModalProps> = ({
       console.log('CardModal - Final payload:', payload);
       
       await onUpdateCard(card.id, payload);
-      
+
+      // Marcar éxito, la notificación se mostrará después de que termine la sincronización
+      saveSucceeded = true;
+
       // Actualizar datos originales después de guardar exitosamente
       setOriginalData({
         title,
@@ -402,10 +431,29 @@ export const CardModal: React.FC<CardModalProps> = ({
       }, 800); // Delay más largo para ver el resultado
     } catch (error) {
       console.error('Error updating card:', error);
+      saveSucceeded = false;
     } finally {
+      // Ensure sync ends before showing notification
+      endSync(`update-card-${card.id}`);
+
+      // Dejar pendiente la notificación; se mostrará cuando termine TODO el sync global y el modal esté cerrado
+      setPendingNotification(saveSucceeded ? 'success' : 'error');
+
       setLoading(false);
     }
   };
+
+  // Mostrar la notificación solo después de que termine cualquier sincronización global y el modal se haya cerrado
+  React.useEffect(() => {
+    if (pendingNotification && !isSyncing && !isOpen) {
+      if (pendingNotification === 'success') {
+        showNotification('success', 'Tarjeta actualizada correctamente');
+      } else {
+        showNotification('error', 'Error al actualizar la tarjeta');
+      }
+      setPendingNotification(null);
+    }
+  }, [pendingNotification, isSyncing, isOpen, showNotification]);
 
   // Función para detectar si hay cambios no guardados
   const hasUnsavedChanges = useCallback(() => {
@@ -483,9 +531,9 @@ export const CardModal: React.FC<CardModalProps> = ({
         title="Detalles de la Tarjeta"
       >
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center space-x-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-kodigo-primary"></div>
+          <div className="flex items-center justify-center py-12 min-h-[200px]">
+            <div className="flex flex-col items-center space-y-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-kodigo-primary" />
               <span className="text-gray-600">Cargando detalles de la tarjeta...</span>
             </div>
           </div>
@@ -528,8 +576,8 @@ export const CardModal: React.FC<CardModalProps> = ({
             </div>
 
         {/* Card Details */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
-          <div className="xl:col-span-2 space-y-4 lg:space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          <div className="lg:col-span-2 space-y-4 lg:space-y-6">
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -645,7 +693,7 @@ export const CardModal: React.FC<CardModalProps> = ({
             </div>
           </div>
 
-          <div className="xl:col-span-1 space-y-3 lg:space-y-4">
+          <div className="lg:col-span-1 space-y-3 lg:space-y-4">
             {/* Lista */}
             {boardLists.length > 0 && (
               <div className="bg-gray-50 p-3 rounded-lg">
@@ -741,18 +789,31 @@ export const CardModal: React.FC<CardModalProps> = ({
               </label>
               {userCanEdit ? (
                 <select
-                  value={priority}
+                  value={selectedPriorityLabelId ?? ''}
                   onChange={(e) => {
-                    const newPriority = e.target.value as 'baja' | 'media' | 'alta' | 'extremo';
-                    setPriority(newPriority);
+                    const labelIdStr = e.target.value;
+                    const labelId = labelIdStr === '' ? null : parseInt(labelIdStr, 10);
+                    setSelectedPriorityLabelId(labelId);
+                    // update textual priority for display
+                    if (labelId === null) setPriority('');
+                    else {
+                      const label = globalLabels.find(l => l.id === labelId);
+                      if (label) {
+                        const name = (label.name || '').toLowerCase();
+                        if (name.includes('alta') || name.includes('high')) setPriority('alta');
+                        else if (name.includes('media') || name.includes('medium')) setPriority('media');
+                        else if (name.includes('baja') || name.includes('low')) setPriority('baja');
+                        else if (name.includes('extremo') || name.includes('urgent') || name.includes('critical')) setPriority('extremo');
+                        else setPriority('');
+                      }
+                    }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-kodigo-primary focus:border-transparent"
                 >
                   <option value="">-</option>
-                  <option value="baja">Baja</option>
-                  <option value="media">Media</option>
-                  <option value="alta">Alta</option>
-                  <option value="extremo">Extremo</option>
+                  {globalLabels.filter(l => /alta|alto|media|medio|baja|bajo|extremo|urgent|critical|high|medium|low/i.test(l.name)).map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
                 </select>
               ) : (
                 <div className="flex items-center space-x-2">

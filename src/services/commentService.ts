@@ -12,17 +12,17 @@ export const commentService = {
   },
 
   async getComment(commentId: number): Promise<Comment> {
-    const response = await apiClient.get<any>(`/api/v1/comments/${commentId}`);
+    const response = await apiClient.get<import('@/models').LaravelResponse<Comment>>(` /api/v1/comments/${commentId}`.trim());
     return extractLaravelData<Comment>(response, 'comment');
   },
 
   async createComment(cardId: number, commentData: CreateCommentRequest): Promise<Comment> {
-    const response = await apiClient.post<any>(`/api/v1/cards/${cardId}/comments`, commentData);
+    const response = await apiClient.post<import('@/models').LaravelResponse<Comment>>(`/api/v1/cards/${cardId}/comments`, commentData);
     return extractLaravelData<Comment>(response, 'comment');
   },
 
   async updateComment(commentId: number, commentData: CreateCommentRequest): Promise<Comment> {
-    const response = await apiClient.put<any>(`/api/v1/comments/${commentId}`, commentData);
+    const response = await apiClient.put<import('@/models').LaravelResponse<Comment>>(`/api/v1/comments/${commentId}`, commentData);
     return extractLaravelData<Comment>(response, 'comment');
   },
 

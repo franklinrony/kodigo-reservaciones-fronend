@@ -6,11 +6,6 @@ import {
   BoardCollaborator
 } from '@/models';
 
-interface LaravelCollaboratorsResponse {
-  message: string;
-  collaborators: BoardCollaborator[];
-}
-
 export const boardService = {
   async getBoards(): Promise<Board[]> {
     console.log('boardService.getBoards - Haciendo llamada a /api/v1/boards...');
@@ -28,17 +23,17 @@ export const boardService = {
   },
 
   async getBoardById(id: string): Promise<Board> {
-    const response = await apiClient.get<any>(`/api/v1/boards/${id}`);
+    const response = await apiClient.get<import('@/models').LaravelResponse<Board>>(`/api/v1/boards/${id}`);
     return extractLaravelData<Board>(response, 'board');
   },
 
   async createBoard(boardData: CreateBoardRequest): Promise<Board> {
-    const response = await apiClient.post<any>('/api/v1/boards', boardData);
+    const response = await apiClient.post<import('@/models').LaravelResponse<Board>>('/api/v1/boards', boardData);
     return extractLaravelData<Board>(response, 'board');
   },
 
   async updateBoard(id: string, boardData: Partial<CreateBoardRequest>): Promise<Board> {
-    const response = await apiClient.put<any>(`/api/v1/boards/${id}`, boardData);
+    const response = await apiClient.put<import('@/models').LaravelResponse<Board>>(`/api/v1/boards/${id}`, boardData);
     return extractLaravelData<Board>(response, 'board');
   },
 
@@ -67,7 +62,7 @@ export const boardService = {
   },
 
   async getCollaborators(boardId: string): Promise<BoardCollaborator[]> {
-    const response = await apiClient.get<LaravelCollaboratorsResponse>(`/api/v1/boards/${boardId}/collaborators`);
+    const response = await apiClient.get<import('@/models').LaravelCollaboratorsResponse>(`/api/v1/boards/${boardId}/collaborators`);
     return extractLaravelData<BoardCollaborator[]>(response, 'collaborators');
   }
 };

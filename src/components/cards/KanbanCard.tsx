@@ -27,8 +27,10 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const { priority, color: priorityColor, text: priorityText } = getPriorityFromLabels(card.labels);
   // Resolver nombre del responsable usando boardUsers si existe
-  const { boardUsers } = useBoardPermissions(boardId || 0);
+  const { boardUsers, loading: boardUsersLoading } = useBoardPermissions(boardId || 0);
   const responsibleName = card.responsible || card.assigned_to || boardUsers.find((u: { id: number; name: string }) => u.id === card.assigned_user_id)?.name || '';
+  // Avatar name fallback: prefer explicit user, then responsible, then assigned_to
+  const avatarName = card.user?.name || responsibleName || card.assigned_to || '';
 
   const handleUpdateTitle = async (newTitle: string) => {
     if (onUpdateCard) {
@@ -84,13 +86,14 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={handleCardClick}
-          className={`kanban-card bg-white rounded-lg shadow-sm border border-gray-200 mb-3 transition-all duration-200 overflow-hidden ${
+          className={`kanban-card relative bg-white rounded-lg shadow-sm border border-gray-200 mb-3 transition-all duration-200 overflow-hidden ${
             snapshot.isDragging ? 'shadow-xl rotate-2 scale-105' : ''
           }`}
+          role="article"
         >
           {/* Header Section - Solo área para doble clic del modal */}
           <div 
-            className="card-header px-4 pt-4 pb-2 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+            className="card-header px-3 pt-2 pb-1 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
             onDoubleClick={handleHeaderDoubleClick}
           >
             <div className="flex items-center justify-between mb-2">
@@ -135,33 +138,33 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             {priority && (
               <div className="flex items-center">
                 <span 
-                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+                  className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full"
                   style={{
                     backgroundColor: `${priorityColor}20`,
                     color: priorityColor
                   }}
                 >
-                  Prioridad: {priorityText}
+                  {priorityText}
                 </span>
               </div>
             )}
           </div>
 
           {/* Content Section - Editable inline */}
-          <div className="px-4 pb-4">
+          <div className="px-3 pb-3">
             {/* Title - Inline Editable */}
-            <div className="inline-edit mb-3">
+            <div className="inline-edit mb-2">
               <InlineEdit
                 value={card.title}
                 onSave={handleUpdateTitle}
                 disabled={!onUpdateCard}
-                className="font-medium text-gray-900 block"
+                className="font-medium text-gray-900 block text-sm sm:text-base"
                 placeholder="Sin título"
               />
             </div>
 
             {/* Description - Inline Editable with truncation */}
-            <div className="inline-edit mb-3">
+            <div className="inline-edit mb-1">
               <TruncatedInlineEdit
                 value={card.description || ''}
                 onSave={handleUpdateDescription}
@@ -178,7 +181,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               return !name.includes('alta') && !name.includes('media') && !name.includes('baja') && 
                      !name.includes('high') && !name.includes('medium') && !name.includes('low');
             }).length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-3">
+              <div className="flex flex-wrap gap-1 mb-1">
                 {card.labels.filter(label => {
                   const name = label.name.toLowerCase();
                   return !name.includes('alta') && !name.includes('media') && !name.includes('baja') && 
@@ -186,7 +189,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                 }).map(label => (
                   <span
                     key={label.id}
-                    className="px-2 py-1 text-xs font-medium rounded-full"
+                    className="px-2 py-0.5 text-xs font-medium rounded-full"
                     style={{
                       backgroundColor: label.color + '20',
                       color: label.color
@@ -199,7 +202,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             )}
 
             {/* Footer Information */}
-            <div className="space-y-2">
+              <div className="space-y-2">
               {/* Due Date */}
               {card.due_date && (
                 <div className="flex items-center text-xs">
@@ -211,7 +214,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               )}
 
               {/* Assignment */}
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-start justify-between text-xs md:items-center md:flex-row flex-col-reverse gap-1">
                 <div className="space-y-1">
                   {card.assigned_to && (
                     <div className="text-gray-600">
@@ -227,11 +230,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 
                 {/* Priority Badge */}
                 {priority && (
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: priorityColor }}
-                    title={`Prioridad: ${priorityText}`}
-                  />
+                  <div className="flex items-center md:justify-end">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: priorityColor }}
+                      title={`Prioridad: ${priorityText}`}
+                    />
+                  </div>
                 )}
               </div>
 
@@ -246,19 +251,33 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                   )}
                 </div>
                 
-                {card.user && (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">
-                        {card.user.name.charAt(0).toUpperCase()}
-                      </span>
+                  {/* Desktop: show avatar + name in footer. Mobile: avatar is shown at top-right to avoid confusion with board icons */}
+                  {!boardUsersLoading && avatarName && (
+                    <div className="hidden sm:flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-medium">
+                          {avatarName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-600">{avatarName}</span>
                     </div>
-                    <span className="text-xs text-gray-600">{card.user.name}</span>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           </div>
+
+            {/* Mobile-only floating avatar on the far right to avoid confusion with board icons */}
+            {!boardUsersLoading && avatarName && (
+              <div className="sm:hidden absolute right-3 top-3 z-20">
+                <div
+                  className="w-8 h-8 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center border-2 border-white shadow pointer-events-auto"
+                  aria-hidden="true"
+                  title={avatarName}
+                >
+                  <span className="text-white text-sm font-medium">{avatarName.charAt(0).toUpperCase()}</span>
+                </div>
+              </div>
+            )}
 
           {/* Click outside to close dropdown */}
           {showDropdown && (

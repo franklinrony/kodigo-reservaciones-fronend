@@ -30,19 +30,19 @@ export const HomePage: React.FC = () => {
           
           {isAuthenticated ? (
             <Link to="/boards">
-              <Button size="lg" className="px-8 py-4 text-lg bg-white text-kodigo-primary hover:bg-gray-50 hover:text-kodigo-dark shadow-2xl font-bold border-2 border-white transition-all duration-300">
+              <Button size="lg" className="px-8 py-4 text-lg font-bold shadow-2xl hover:shadow-xl" variant="gradient">
                 Ver mis tableros
               </Button>
             </Link>
           ) : (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
-                <Button size="lg" className="px-8 py-4 text-lg bg-white text-kodigo-primary hover:bg-gray-50 hover:text-kodigo-dark shadow-2xl font-bold transition-all duration-300 border-2 border-white">
+                <Button size="lg" className="px-8 py-4 text-lg font-bold shadow-2xl hover:shadow-xl" variant="gradient">
                   Comenzar gratis
                 </Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" className="px-8 py-4 text-lg btn-ghost-on-gradient shadow-2xl">
+                <Button size="lg" className="px-8 py-4 text-lg shadow-2xl" variant="ghost">
                   Iniciar sesión
                 </Button>
               </Link>

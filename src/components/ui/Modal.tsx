@@ -25,7 +25,7 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
       {/* Overlay */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
@@ -33,7 +33,7 @@ export const Modal: React.FC<ModalProps> = ({
       />
       
       {/* Container responsive con scroll */}
-      <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
         <div
           className={clsx(
             'relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 w-full',
@@ -44,6 +44,9 @@ export const Modal: React.FC<ModalProps> = ({
               'sm:max-w-6xl max-h-[90vh] overflow-y-auto': size === 'xl',
             }
           )}
+          onClick={(e) => e.stopPropagation()}
+          tabIndex={-1}
+          style={{ willChange: 'transform, opacity' }}
         >
           {title && (
             <div className="flex items-center justify-between px-4 py-4 sm:px-6 border-b bg-white sticky top-0 z-10">

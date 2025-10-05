@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@/models';
 import { authService } from '@/services/authService';
 
@@ -41,6 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const userData = await authService.getMe();
           setUser(userData);
         } catch (error) {
+          console.error('AuthContext - initAuth error:', error);
           authService.removeToken();
         }
       }
@@ -156,6 +157,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Ignore logout errors on the server
     });
   };
+  // Minimal implementations for fields required by the context type
+  const tokenExpiresIn = null;
+  const refreshToken = async () => {
+    try {
+      // Try to refresh token via authService; return false if not implemented
+      if (typeof authService.refreshToken === 'function') {
+        await authService.refreshToken();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('AuthContext - refreshToken error:', e);
+      return false;
+    }
+  };
 
   const value: AuthContextType = {
     user,
@@ -164,6 +180,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     isAuthenticated: !!user,
+    tokenExpiresIn,
+    refreshToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

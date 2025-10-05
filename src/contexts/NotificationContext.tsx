@@ -60,8 +60,10 @@ const NotificationContainer: React.FC = () => {
   if (notifications.length === 0) return null;
 
   return (
-    // Desktop: anchored to right with max width; Mobile: small right offset and horizontal padding
-    <div className="fixed top-4 right-2 sm:right-4 z-50 space-y-3 w-[calc(100%-24px)] sm:w-auto sm:max-w-md px-2 sm:px-0">
+    // Desktop: anchored to right with max width; Mobile: centered with horizontal padding
+    <div className="fixed top-4 left-0 right-0 z-50 flex items-start justify-center pointer-events-none">
+  {/* Mobile: full width minus gap; Desktop: wider fixed/min width for better readability */}
+  <div className="space-y-3 w-[calc(100%-32px)] sm:w-[min(960px,calc(100%-64px))] lg:w-[min(1150px,calc(100%-128px))] px-4 sm:px-0 pointer-events-auto">
       {notifications.map((notification: Notification) => (
         <NotificationItem
           key={notification.id}
@@ -69,6 +71,7 @@ const NotificationContainer: React.FC = () => {
           onRemove={removeNotification}
         />
       ))}
+      </div>
     </div>
   );
 };
@@ -120,7 +123,7 @@ const NotificationItem: React.FC<{
 
   return (
     <div 
-      className={`w-full ${styles.bg} ${styles.border} ${styles.shadow} rounded-r-lg backdrop-blur-sm animate-slide-in-right overflow-hidden transition-all duration-300 hover:scale-[1.02]`}
+      className={`w-full max-w-full ${styles.bg} ${styles.border} ${styles.shadow} rounded-r-lg backdrop-blur-sm animate-slide-in-right overflow-hidden transition-all duration-300 hover:scale-[1.02]`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >

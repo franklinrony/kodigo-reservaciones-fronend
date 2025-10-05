@@ -58,12 +58,9 @@ export const LoginForm: React.FC = () => {
               Regístrate aquí
             </Link>
           </p>
-          {/* TEMPORAL: Instrucciones para testing */}
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-sm text-green-800">
-              <strong>✅ Backend conectado!</strong> Usa tus credenciales reales de la base de datos.
-            </p>
-          </div>
+          <div className="mt-2 text-center">
+            <Link to="/" className="text-sm text-kodigo-primary hover:text-kodigo-dark transition-colors duration-150">Volver al inicio</Link>
+          </div> 
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

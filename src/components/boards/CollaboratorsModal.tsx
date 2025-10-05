@@ -239,7 +239,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
           ) : (
             <>
               {/* Lista de usuarios disponibles */}
-              <div className="max-h-60 overflow-y-auto space-y-2 mb-4">
+              <div className="max-h-40 sm:max-h-60 overflow-y-auto space-y-2 mb-4">
                 {availableUsers.length === 0 ? (
                   <p className="text-gray-500 text-center py-4">
                     {searchTerm ? 'No se encontraron usuarios con ese criterio' : 'No hay usuarios disponibles'}
@@ -278,9 +278,9 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
 
               {/* Botón agregar */}
               {selectedUsers.length > 0 && (
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <span className="text-sm text-gray-600 truncate">
                       {selectedUsers.length} usuario(s) seleccionado(s)
                     </span>
                     <div className="flex items-center space-x-2">
@@ -288,7 +288,7 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
                       <select
                         value={selectedRole}
                         onChange={(e) => setSelectedRole(e.target.value as 'viewer' | 'editor' | 'admin')}
-                        className="px-2 py-1 text-sm border border-gray-300 rounded"
+                        className="w-24 sm:max-w-[140px] px-2 py-0.5 text-sm border border-gray-300 rounded"
                       >
                         <option value="viewer">👁️ Viewer</option>
                         <option value="editor">✏️ Editor</option>
@@ -296,15 +296,17 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
                       </select>
                     </div>
                   </div>
-                  <Button
-                    onClick={addSelectedCollaborators}
-                    loading={addingUsers}
-                    size="sm"
-                    className="bg-kodigo-primary hover:bg-kodigo-dark"
-                  >
-                    <Plus size={16} className="mr-1" />
-                    Agregar como {selectedRole === 'viewer' ? 'Viewer' : selectedRole === 'editor' ? 'Editor' : 'Admin'}
-                  </Button>
+                  <div className="flex-shrink-0">
+                    <Button
+                      onClick={addSelectedCollaborators}
+                      loading={addingUsers}
+                      size="sm"
+                      className="bg-kodigo-primary hover:bg-kodigo-dark"
+                    >
+                      <Plus size={16} className="mr-1" />
+                      Agregar como {selectedRole === 'viewer' ? 'Viewer' : selectedRole === 'editor' ? 'Editor' : 'Admin'}
+                    </Button>
+                  </div>
                 </div>
               )}
             </>
@@ -316,42 +318,64 @@ export const CollaboratorsModal: React.FC<CollaboratorsModalProps> = ({
         <div className="border rounded-lg p-4">
           <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
             <User size={20} className="mr-2 text-kodigo-primary" />
-            Colaboradores Actuales ({existingCollaborators.length})
+            Colaboradores Actuales ({loadingUsers ? '...' : existingCollaborators.length})
           </h3>
 
-          {existingCollaborators.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
-              No hay colaboradores en este tablero
-            </p>
+          {loadingUsers ? (
+            <div className="space-y-3">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="p-3 bg-white border rounded-lg animate-pulse">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full" />
+                      <div className="min-w-0">
+                        <div className="h-4 bg-gray-200 rounded w-40 mb-2" />
+                        <div className="h-3 bg-gray-200 rounded w-28" />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="h-6 w-20 bg-gray-200 rounded-full" />
+                      <div className="h-6 w-6 bg-gray-200 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="space-y-3">
               {existingCollaborators.map(user => {
                 return (
-                  <div key={user.id} className="flex items-center justify-between p-3 bg-white border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center">
+                  <div key={user.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white border rounded-lg">
+                    <div className="flex items-center space-x-3 min-w-0 flex-shrink-0 w-full">
+                      <div className="w-8 h-8 bg-gradient-to-r from-kodigo-primary to-kodigo-secondary rounded-full flex items-center justify-center flex-shrink-0">
                         <User size={14} className="text-white" />
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 flex items-center">
-                          {user.name}
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{user.name}</p>
+                        <div className="flex items-center space-x-2 mt-1">
                           {user.id === currentUserId && (
-                            <span className="ml-2 text-xs bg-kodigo-primary text-white px-2 py-1 rounded-full">
+                            <span className="text-xs bg-kodigo-primary text-white px-2 py-1 rounded-full">
                               Tú
                             </span>
                           )}
-                        </p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                          {user.role === 'owner' && (
+                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                              Owner
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 truncate mt-1">{user.email}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-3">
+                    <div className="mt-3 sm:mt-0 flex items-center space-x-3">
                       {/* Selector de rol */}
                       <select
                         value={user.role || 'editor'}
                         onChange={(e) => changeCollaboratorRole(user.id, e.target.value as 'viewer' | 'editor' | 'admin')}
                         disabled={!canManageCollaborators || user.id === currentUserId || user.role === 'owner'}
-                        className={`px-3 py-1 text-sm rounded-full border-0 flex items-center space-x-1 ${getRoleColor(user.role || 'editor')} disabled:opacity-50`}
+                        className={`w-28 sm:max-w-[140px] px-2 py-1 text-sm rounded-full border-0 flex items-center space-x-1 ${getRoleColor(user.role || 'editor')} disabled:opacity-50`}
+                        style={{ minWidth: 0 }}
                       >
                         {user.role === 'owner' ? (
                           <option value="owner">👑 Owner</option>
