@@ -100,25 +100,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (name: string, email: string, password: string, passwordConfirmation: string) => {
     console.log('AuthContext - Iniciando registro...');
-    
-    // TEMPORAL: Mock para testing sin backend
-    if (password === passwordConfirmation && email.includes('@')) {
-      const mockResponse = {
-        token: 'mock-jwt-token-' + Date.now(),
-        user: {
-          id: 2,
-          name: name,
-          email: email,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      };
-      console.log('AuthContext - Usando respuesta mock para registro:', mockResponse);
-      authService.setToken(mockResponse.token);
-      setUser(mockResponse.user);
-      console.log('AuthContext - Usuario registrado y establecido:', mockResponse.user);
-      return;
-    }
+    // NOTE: Previously there was a development mock here that short-circuited
+    // the real registration request. Remove the mock so the app always calls
+    // the backend via authService.register and then fetches the current user.
     
     try {
       // Registro y obtener token

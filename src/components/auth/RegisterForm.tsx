@@ -33,6 +33,12 @@ export const RegisterForm: React.FC = () => {
       return;
     }
 
+    // Validación cliente: contraseña mínima
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -40,9 +46,25 @@ export const RegisterForm: React.FC = () => {
       await register(name, email, password, confirmPassword);
       console.log('RegisterForm - register() resolved successfully');
       // La navegación se manejará en el useEffect cuando isAuthenticated cambie
-    } catch (err) {
-      console.error('RegisterForm - error en register():', err);
-      setError(err instanceof Error ? err.message : 'Error en el registro');
+    } catch (errUnknown) {
+      console.error('RegisterForm - error en register():', errUnknown);
+      // Intentar extraer mensajes de validación del servidor (ApiError.errors)
+      const apiErr = errUnknown as { errors?: Record<string, string[]>; message?: string };
+      if (apiErr && typeof apiErr === 'object' && apiErr.errors) {
+        try {
+          const messages = Object.values(apiErr.errors).flat().filter(Boolean) as string[];
+          if (messages.length > 0) {
+            setError(messages.join(' - '));
+          } else {
+            setError(apiErr.message || 'Error en el registro');
+          }
+        } catch (parseErr) {
+          console.error('RegisterForm - error parsing ApiError.errors', parseErr);
+          setError(apiErr.message || 'Error en el registro');
+        }
+      } else {
+        setError(errUnknown instanceof Error ? errUnknown.message : 'Error en el registro');
+      }
     } finally {
       setLoading(false);
     }
