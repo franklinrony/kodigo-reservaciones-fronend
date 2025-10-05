@@ -208,15 +208,33 @@ class ApiClient {
 
       console.log('API Request - Response status:', response.status);
       
-      const data = await response.json();
-      console.log('API Request - Response data:', data);
+  const data: unknown = await response.json();
+  console.log('API Request - Response data:', data);
+  const respObj = (data && typeof data === 'object' && data !== null) ? (data as Record<string, unknown>) : undefined;
 
       if (!response.ok) {
         console.error(`API Request - Error ${response.status}:`, data);
-        throw new ApiError(data.message || 'Something went wrong', data.errors);
+        // If the server returned validation errors but no message, prefer the
+        // first validation message so consumers that use err.message show
+        // something actionable instead of the generic text.
+        let message: string = 'Something went wrong';
+        if (respObj) {
+          if (typeof respObj.message === 'string') {
+            message = respObj.message;
+          } else if (respObj.errors && typeof respObj.errors === 'object') {
+            const errs = respObj.errors as Record<string, unknown>;
+            // Flatten values and pick the first string message if available
+            const first = Object.values(errs)
+              .flatMap(v => Array.isArray(v) ? v : [v])
+              .find(x => typeof x === 'string') as string | undefined;
+            if (first) message = first;
+          }
+        }
+
+        throw new ApiError(message, respObj ? (respObj.errors as Record<string, string[]>) : undefined);
       }
 
-      return data;
+  return data as T;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
