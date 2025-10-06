@@ -23,17 +23,17 @@ interface LaravelPaginatedUsersResponse {
 
 export const userService = {
   async getUserById(userId: number): Promise<User> {
-    const response = await apiClient.get<LaravelUserResponse>(`/api/v1/users/${userId}`);
+    const response = await apiClient.get<LaravelUserResponse>(`/v1/users/${userId}`);
     return extractLaravelData<User>(response, 'user');
   },
 
   async getBoardUsers(boardId: number): Promise<User[]> {
-    const response = await apiClient.get<LaravelUsersResponse>(`/api/v1/boards/${boardId}/users`);
+    const response = await apiClient.get<LaravelUsersResponse>(`/v1/boards/${boardId}/users`);
     return extractLaravelData<User[]>(response, 'users');
   },
 
   async getAllUsers(): Promise<User[]> {
-    const response = await apiClient.get<LaravelPaginatedUsersResponse>('/api/v1/users');
+    const response = await apiClient.get<LaravelPaginatedUsersResponse>('/v1/users');
     return response.users.data;
   }
 };

@@ -1,12 +1,12 @@
-import React, { createContext, useContext, useEffect, ReactNode, useState, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { createContext, useEffect, ReactNode, useState, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { boardService } from '@/services/boardService';
 import { userService } from '@/services/userService';
 import { User } from '@/models';
 
 export type UserBoardRole = 'owner' | 'admin' | 'editor' | 'viewer' | null;
 
-interface BoardPermissions {
+export interface BoardPermissions {
   userRole: UserBoardRole;
   canEdit: boolean;
   canDelete: boolean;
@@ -16,22 +16,14 @@ interface BoardPermissions {
   boardUsers?: User[];
 }
 
-interface BoardPermissionsContextType {
+export interface BoardPermissionsContextType {
   getBoardPermissions: (boardId: number) => BoardPermissions;
   getBoardUsers: (boardId: number) => User[] | undefined;
   preloadBoardPermissions: (boardIds: number[]) => Promise<void>;
   refreshBoardPermissions: (boardId: number) => Promise<void>;
 }
 
-const BoardPermissionsContext = createContext<BoardPermissionsContextType | undefined>(undefined);
-
-export const useBoardPermissionsContext = () => {
-  const context = useContext(BoardPermissionsContext);
-  if (!context) {
-    throw new Error('useBoardPermissionsContext must be used within a BoardPermissionsProvider');
-  }
-  return context;
-};
+export const BoardPermissionsContext = createContext<BoardPermissionsContextType | undefined>(undefined);
 
 // Cache global para permisos de tableros
 const boardPermissionsCache = new Map<number, BoardPermissions>();

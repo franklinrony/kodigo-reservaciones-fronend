@@ -7,7 +7,7 @@ import { Plus } from 'lucide-react';
 import { listService } from '@/services/listService';
 import { cardService } from '@/services/cardService';
 import { useNotification } from '@/hooks/useNotification';
-import { useSyncContext } from '@/contexts/SyncContext';
+import { useSync } from '@/hooks/useSync';
 import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 
 interface KanbanViewProps {
@@ -25,7 +25,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const [newListName, setNewListName] = useState('');
   const [loading, setLoading] = useState(false);
   const { showNotification } = useNotification();
-  const { startSync, endSync } = useSyncContext();
+  const { startSync, endSync } = useSync();
   const { canEdit } = useBoardPermissions(board.id);
 
   // Estado local para optimistic updates

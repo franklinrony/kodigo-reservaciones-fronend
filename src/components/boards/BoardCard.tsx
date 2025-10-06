@@ -4,7 +4,7 @@ import { Board } from '@/models';
 import { Calendar, Users, Lock, Globe, Eye, Edit3, Crown, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { useBoardPermissions } from '@/hooks/useBoardPermissions';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BoardCardProps {
   board: Board;

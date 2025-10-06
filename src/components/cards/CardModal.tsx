@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/Input';
 import { commentService } from '@/services/commentService';
 import { userService } from '@/services/userService';
 import { labelService } from '@/services/labelService';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 import { useNotification } from '@/hooks/useNotification';
-import { useSyncContext } from '@/contexts/SyncContext';
+import { useSync } from '@/hooks/useSync';
 
 interface CardModalProps {
   card: Card | null;
@@ -33,7 +33,7 @@ export const CardModal: React.FC<CardModalProps> = ({
   const { user: currentUser } = useAuth();
   const { canEdit, boardUsers } = useBoardPermissions(boardId);
   const { showNotification } = useNotification();
-  const { startSync, endSync, isSyncing } = useSyncContext();
+  const { startSync, endSync, isSyncing } = useSync();
   const [pendingNotification, setPendingNotification] = useState<'success' | 'error' | null>(null);
 
   // Estado para las labels globales

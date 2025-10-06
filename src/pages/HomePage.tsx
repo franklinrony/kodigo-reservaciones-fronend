@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { LayoutDashboard, Users, Zap } from 'lucide-react';
 

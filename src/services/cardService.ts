@@ -14,7 +14,7 @@ interface LaravelCardResponse {
 export const cardService = {
   async getCards(listId: number): Promise<Card[]> {
     try {
-      const response = await apiClient.get<LaravelCardsResponse>(`/api/v1/lists/${listId}/cards`);
+      const response = await apiClient.get<LaravelCardsResponse>(`/v1/lists/${listId}/cards`);
       return extractLaravelData<Card[]>(response, 'cards');
     } catch (error) {
       console.error('Error getting cards:', error);
@@ -29,7 +29,7 @@ export const cardService = {
 
   async getCard(cardId: number): Promise<Card> {
     try {
-      const response = await apiClient.get<LaravelCardResponse>(`/api/v1/cards/${cardId}`);
+      const response = await apiClient.get<LaravelCardResponse>(`/v1/cards/${cardId}`);
       return extractLaravelData<Card>(response, 'card');
     } catch (error) {
       console.error('Error getting card:', error);
@@ -44,7 +44,7 @@ export const cardService = {
 
   async createCard(listId: number, cardData: CreateCardRequest): Promise<Card> {
     try {
-      const response = await apiClient.post<LaravelCardResponse>(`/api/v1/lists/${listId}/cards`, cardData);
+      const response = await apiClient.post<LaravelCardResponse>(`/v1/lists/${listId}/cards`, cardData);
       return extractLaravelData<Card>(response, 'card');
     } catch (error) {
       console.error('Error creating card:', error);
@@ -59,7 +59,7 @@ export const cardService = {
 
   async updateCard(cardId: number, cardData: UpdateCardRequest): Promise<Card> {
     try {
-      const response = await apiClient.put<LaravelCardResponse>(`/api/v1/cards/${cardId}`, cardData);
+      const response = await apiClient.put<LaravelCardResponse>(`/v1/cards/${cardId}`, cardData);
       return extractLaravelData<Card>(response, 'card');
     } catch (error) {
       console.error('Error updating card:', error);
@@ -74,7 +74,7 @@ export const cardService = {
 
   async deleteCard(cardId: number): Promise<void> {
     try {
-      await apiClient.delete(`/api/v1/cards/${cardId}`);
+      await apiClient.delete(`/v1/cards/${cardId}`);
     } catch (error) {
       console.error('Error deleting card:', error);
       // Verificar si es el error específico del backend sobre board null

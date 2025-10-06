@@ -8,7 +8,7 @@ import {
 
 export const boardService = {
   async getBoards(): Promise<Board[]> {
-    const response = await apiClient.get<LaravelBoardsResponse>('/api/v1/boards');
+    const response = await apiClient.get<LaravelBoardsResponse>('/v1/boards');
 
     try {
       const boards = extractLaravelData<Board[]>(response, 'boards');
@@ -20,27 +20,27 @@ export const boardService = {
   },
 
   async getBoardById(id: string): Promise<Board> {
-    const response = await apiClient.get<import('@/models').LaravelResponse<Board>>(`/api/v1/boards/${id}`);
+    const response = await apiClient.get<import('@/models').LaravelResponse<Board>>(`/v1/boards/${id}`);
     return extractLaravelData<Board>(response, 'board');
   },
 
   async createBoard(boardData: CreateBoardRequest): Promise<Board> {
-    const response = await apiClient.post<import('@/models').LaravelResponse<Board>>('/api/v1/boards', boardData);
+    const response = await apiClient.post<import('@/models').LaravelResponse<Board>>('/v1/boards', boardData);
     return extractLaravelData<Board>(response, 'board');
   },
 
   async updateBoard(id: string, boardData: Partial<CreateBoardRequest>): Promise<Board> {
-    const response = await apiClient.put<import('@/models').LaravelResponse<Board>>(`/api/v1/boards/${id}`, boardData);
+    const response = await apiClient.put<import('@/models').LaravelResponse<Board>>(`/v1/boards/${id}`, boardData);
     return extractLaravelData<Board>(response, 'board');
   },
 
   async deleteBoard(id: string): Promise<void> {
-    await apiClient.delete(`/api/v1/boards/${id}`);
+    await apiClient.delete(`/v1/boards/${id}`);
   },
 
   async addCollaborator(boardId: string, userId: string, role: string = 'member'): Promise<void> {
     await apiClient.post(
-      `/api/v1/boards/${boardId}/collaborators`,
+      `/v1/boards/${boardId}/collaborators`,
       { user_id: userId, role }
     );
     // Note: API saves data but doesn't return collaborator object in expected format
@@ -48,18 +48,18 @@ export const boardService = {
 
   async updateCollaborator(boardId: string, collaboratorId: string, role: string): Promise<void> {
     await apiClient.put(
-      `/api/v1/boards/${boardId}/collaborators/${collaboratorId}`,
+      `/v1/boards/${boardId}/collaborators/${collaboratorId}`,
       { role }
     );
     // Note: API updates data but doesn't return collaborator object in expected format
   },
 
   async removeCollaborator(boardId: number, userId: number): Promise<void> {
-    await apiClient.delete(`/api/v1/boards/${boardId}/collaborators/${userId}`);
+    await apiClient.delete(`/v1/boards/${boardId}/collaborators/${userId}`);
   },
 
   async getCollaborators(boardId: string): Promise<BoardCollaborator[]> {
-    const response = await apiClient.get<import('@/models').LaravelCollaboratorsResponse>(`/api/v1/boards/${boardId}/collaborators`);
+    const response = await apiClient.get<import('@/models').LaravelCollaboratorsResponse>(`/v1/boards/${boardId}/collaborators`);
     return extractLaravelData<BoardCollaborator[]>(response, 'collaborators');
   }
 };

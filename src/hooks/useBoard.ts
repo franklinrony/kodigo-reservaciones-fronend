@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Board } from '@/models';
 import { boardService } from '@/services/boardService';
-import { useSyncContext } from '@/contexts/SyncContext';
+import { useSync } from '@/hooks/useSync';
 
 export const useBoard = (boardId: number) => {
   const [board, setBoard] = useState<Board | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { startSync, endSync } = useSyncContext();
+  const { startSync, endSync } = useSync();
 
   useEffect(() => {
     const fetchBoard = async () => {

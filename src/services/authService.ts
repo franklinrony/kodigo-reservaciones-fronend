@@ -9,18 +9,18 @@ import {
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/api/auth/login', credentials);
+    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
     return response;
   },
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/api/auth/register', userData);
+    const response = await apiClient.post<AuthResponse>('/auth/register', userData);
     return response;
   },
 
   async getMe(): Promise<User> {
     try {
-      const response = await apiClient.get<LaravelUserResponse>('/api/auth/me');
+      const response = await apiClient.get<LaravelUserResponse>('/auth/me');
       const user = extractLaravelData<User>(response, 'user');
       return user;
     } catch (error) {
@@ -30,11 +30,11 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    await apiClient.post('/api/auth/logout');
+    await apiClient.post('/auth/logout');
   },
 
   async refreshToken(): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/api/auth/refresh');
+    const response = await apiClient.post<AuthResponse>('/auth/refresh');
     return response;
   },
 

@@ -1,8 +1,8 @@
 import React from 'react';
-import { useSyncContext } from '@/contexts/SyncContext';
+import { useSync } from '@/hooks/useSync';
 
 export const SyncIndicator: React.FC = () => {
-  const { isSyncing } = useSyncContext();
+  const { isSyncing } = useSync();
 
   if (!isSyncing) return null;
 

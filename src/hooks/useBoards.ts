@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Board } from '@/models';
 import { boardService } from '@/services/boardService';
-import { useBoardPermissionsContext } from '@/contexts/BoardPermissionsContext';
+import { useBoardPermissionsContext } from '@/hooks/useBoardPermissions';
 
 export const useBoards = () => {
   const [boards, setBoards] = useState<Board[]>([]);

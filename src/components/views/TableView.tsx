@@ -5,7 +5,7 @@ import { GripVertical } from 'lucide-react';
 import { cardService } from '../../services/cardService';
 import { labelService } from '../../services/labelService';
 import { useNotification } from '../../hooks/useNotification';
-import { useSyncContext } from '../../contexts/SyncContext';
+import { useSync } from '../../hooks/useSync';
 import { getPriorityFromLabels, formatDueDate } from '@/utils/textUtils';
 import { InlineEdit } from '@/components/ui/InlineEdit';
 import { TruncatedInlineEdit } from '@/components/ui/TruncatedInlineEdit';
@@ -27,7 +27,7 @@ interface ExtendedCard extends Card {
 export const TableView: React.FC<TableViewProps> = ({ board, onCardClick, onBoardUpdate }) => {
   // Inline edit removed for table view to simplify mobile rendering
   const { showNotification } = useNotification();
-  const { startSync, endSync } = useSyncContext();
+  const { startSync, endSync } = useSync();
   const { canEdit } = useBoardPermissions(board.id);
   // notification already available as showNotification
   const { boardUsers } = useBoardPermissions(board.id);

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useState, ReactNode } from 'react';
 
 interface SyncContextType {
   isSyncing: boolean;
@@ -7,15 +7,7 @@ interface SyncContextType {
   endSync: (operationId: string) => void;
 }
 
-const SyncContext = createContext<SyncContextType | undefined>(undefined);
-
-export const useSyncContext = () => {
-  const context = useContext(SyncContext);
-  if (!context) {
-    throw new Error('useSyncContext must be used within a SyncProvider');
-  }
-  return context;
-};
+export const SyncContext = createContext<SyncContextType | undefined>(undefined);
 
 interface SyncProviderProps {
   children: ReactNode;

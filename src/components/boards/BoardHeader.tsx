@@ -4,7 +4,7 @@ import { Board } from '@/models';
 import { Button } from '@/components/ui/Button';
 import { CollaboratorsModal } from './CollaboratorsModal';
 import { Users, Eye, Table, ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useBoardPermissions } from '@/hooks/useBoardPermissions';
 
 interface BoardHeaderProps {

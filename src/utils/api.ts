@@ -41,24 +41,20 @@ export function extractLaravelData<T>(response: unknown, dataKey?: string): T {
 
 class ApiClient {
   private baseURL: string;
-  private authBaseURL: string;
-  private apiV1BaseURL: string;
   private isRefreshing: boolean = false;
   private failedQueue: Array<{ resolve: (token: string) => void; reject: (error: Error) => void }> = [];
 
-  constructor(baseURL: string, authBaseURL: string, apiV1BaseURL: string) {
+  constructor(baseURL: string) {
     this.baseURL = baseURL;
-    this.authBaseURL = authBaseURL;
-    this.apiV1BaseURL = apiV1BaseURL;
   }
 
   private shouldExcludeAuth(endpoint: string): boolean {
     // Rutas que NO necesitan token de autenticación
     const authExcludePaths = [
-      '/api/auth/login',
-      '/api/auth/register',
-      '/api/auth/forgot-password',
-      '/api/auth/reset-password'
+      '/auth/login',
+      '/auth/register',
+      '/auth/forgot-password',
+      '/auth/reset-password'
     ];
     
     return authExcludePaths.some(path => endpoint.includes(path));
@@ -66,7 +62,7 @@ class ApiClient {
 
   private async refreshAuthToken(): Promise<string> {
     try {
-      const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
+      const response = await fetch(this.getFullUrl('/auth/refresh'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,21 +110,12 @@ class ApiClient {
   }
 
   private getFullUrl(endpoint: string): string {
-    // Determinar qué URL base usar basándose en el endpoint
-    if (endpoint.startsWith('/api/auth')) {
-      return `${this.baseURL}${endpoint}`;
-    } else if (endpoint.startsWith('/api/v1')) {
-      return `${this.baseURL}${endpoint}`;
-    } else if (endpoint.startsWith('/auth')) {
-      // Para endpoints que empiecen con /auth (sin /api)
-      return `${this.baseURL}${this.authBaseURL}${endpoint.replace('/auth', '')}`;
+    if (endpoint.startsWith('/auth')) {
+      return `${this.baseURL}${AUTH_BASE_URL}${endpoint.replace('/auth', '')}`;
     } else if (endpoint.startsWith('/v1')) {
-      // Para endpoints que empiecen con /v1 (sin /api)
-      return `${this.baseURL}${this.apiV1BaseURL}${endpoint.replace('/v1', '')}`;
-    } else {
-      // Para endpoints relativos, asumir API v1
-      return `${this.baseURL}${this.apiV1BaseURL}${endpoint}`;
+      return `${this.baseURL}${API_V1_BASE_URL}${endpoint.replace('/v1', '')}`;
     }
+    return `${this.baseURL}${endpoint}`;
   }
 
   private async request<T>(
@@ -255,4 +242,4 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(API_BASE_URL, AUTH_BASE_URL, API_V1_BASE_URL);
+export const apiClient = new ApiClient(API_BASE_URL);

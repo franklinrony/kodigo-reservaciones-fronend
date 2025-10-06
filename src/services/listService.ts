@@ -13,7 +13,7 @@ interface LaravelListResponse {
 export const listService = {
   async getLists(boardId: number): Promise<BoardList[]> {
     try {
-      const response = await apiClient.get<LaravelListsResponse>(`/api/v1/boards/${boardId}/lists`);
+      const response = await apiClient.get<LaravelListsResponse>(`/v1/boards/${boardId}/lists`);
       return extractLaravelData<BoardList[]>(response, 'lists');
     } catch (error) {
       console.error('Error getting lists:', error);
@@ -28,7 +28,7 @@ export const listService = {
 
   async getList(boardId: number, listId: number): Promise<BoardList> {
     try {
-      const response = await apiClient.get<LaravelListResponse>(`/api/v1/boards/${boardId}/lists/${listId}`);
+      const response = await apiClient.get<LaravelListResponse>(`/v1/boards/${boardId}/lists/${listId}`);
       return extractLaravelData<BoardList>(response, 'list');
     } catch (error) {
       console.error('Error getting list:', error);
@@ -43,7 +43,7 @@ export const listService = {
 
   async createList(boardId: number, listData: CreateListRequest): Promise<BoardList> {
     try {
-      const response = await apiClient.post<LaravelListResponse>(`/api/v1/boards/${boardId}/lists`, listData);
+      const response = await apiClient.post<LaravelListResponse>(`/v1/boards/${boardId}/lists`, listData);
       return extractLaravelData<BoardList>(response, 'list');
     } catch (error) {
       console.error('Error creating list:', error);
@@ -58,7 +58,7 @@ export const listService = {
 
   async updateList(boardId: number, listId: number, listData: Partial<CreateListRequest>): Promise<BoardList> {
     try {
-      const response = await apiClient.put<LaravelListResponse>(`/api/v1/boards/${boardId}/lists/${listId}`, listData);
+      const response = await apiClient.put<LaravelListResponse>(`/v1/boards/${boardId}/lists/${listId}`, listData);
       return extractLaravelData<BoardList>(response, 'list');
     } catch (error) {
       console.error('Error updating list:', error);
@@ -73,7 +73,7 @@ export const listService = {
 
   async deleteList(boardId: number, listId: number): Promise<void> {
     try {
-      await apiClient.delete(`/api/v1/boards/${boardId}/lists/${listId}`);
+      await apiClient.delete(`/v1/boards/${boardId}/lists/${listId}`);
     } catch (error) {
       console.error('Error deleting list:', error);
       // Verificar si es el error específico del backend sobre board null
