@@ -12,7 +12,7 @@ dist-ssr
 *.local
 
 .vscode/*
-.bolt/
+.bolt/*
 .idea
 .DS_Store
 *.suo
