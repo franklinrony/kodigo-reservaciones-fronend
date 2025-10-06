@@ -81,6 +81,24 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     return newBoard;
   };
 
+  // Helper function para mover listas optimistamente
+  const moveListOptimistically = (sourceIndex: number, destIndex: number): Board => {
+    const newBoard = { ...optimisticBoard } as Board;
+    newBoard.lists = newBoard.lists?.map(l => ({ ...l, cards: [...(l.cards || [])] })) || [];
+
+    const listsArr = [...(newBoard.lists || [])];
+    const [moved] = listsArr.splice(sourceIndex, 1);
+    listsArr.splice(destIndex, 0, moved);
+
+    // Update positions according to new order
+    listsArr.forEach((lst, idx) => {
+      lst.position = idx + 1;
+    });
+
+    newBoard.lists = listsArr;
+    return newBoard;
+  };
+
   // Helper function para revertir cambios optimistas
   const revertOptimisticChanges = () => {
     setOptimisticBoard(board);
@@ -237,7 +255,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
       return;
     }
 
-    if (type === 'CARD') {
+  if (type === 'CARD') {
       const cardId = parseInt(draggableId);
       const sourceListId = parseInt(source.droppableId);
       const destListId = parseInt(destination.droppableId);
@@ -277,6 +295,39 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
         revertOptimisticChanges();
         showNotification('error', error instanceof Error ? error.message : 'Error al mover la tarjeta');
         endSync(`move-card-${cardId}`);
+      }
+    }
+
+    if (type === 'LIST') {
+      // draggableId comes as `list-<id>` from KanbanList
+      const rawId = draggableId?.toString() || '';
+      const match = rawId.match(/^list-(\d+)$/);
+      if (!match) return;
+      const listId = parseInt(match[1], 10);
+
+      // Optimistic update of lists order
+      const newBoard = moveListOptimistically(source.index, destination.index);
+      setOptimisticBoard(newBoard);
+
+      try {
+        startSync(`reorder-list-${listId}`);
+        // Update position on backend for the moved list
+        const payload = { position: destination.index + 1 };
+        console.debug('[KanbanView] reorder list payload:', { listId, payload });
+        await listService.updateList(board.id, listId, payload);
+
+        showNotification('success', 'Lista reordenada correctamente');
+        // Refetch real board state in background
+        setTimeout(() => {
+          onBoardUpdate();
+          endSync(`reorder-list-${listId}`);
+        }, 300);
+      } catch (error) {
+        console.error('Error reordering list:', error);
+        showNotification('error', error instanceof Error ? error.message : 'Error al reordenar la lista');
+        // Revert optimistic changes
+        setOptimisticBoard(board);
+        endSync(`reorder-list-${listId}`);
       }
     }
   };
